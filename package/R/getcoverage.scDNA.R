@@ -1,9 +1,31 @@
-getcoverage.scDNA=function (bambedObj, mapqthres, mask.ref, seq) 
+#' @title Get read coverage from single-cell DNA sequencing
+#'
+#' @description Get read coverage for each genomic bin across all single cells
+#' from scDNA-seq.
+#'
+#' @param bambedObj object returned from \code{\link[CODEX2]{getbambed}}
+#' @param mapqthres mapping quality threshold of reads
+#' @param mask.ref a GRanges object indicating bad regions/bins, such as segmental
+#' duplication regions and gaps near telomeres/centromeres, which need to be masked
+#' prior to getting coverage
+#' @param seq the sequencing method to be used. This should be either "paired-end"
+#' or "single-end"
+#'
+#' @return
+#'   \item{Y}{Read depth matrix}
+#'
+#' @author Rujin Wang \email{rujin@email.unc.edu}
+#' @import Rsamtools
+#' @importFrom GenomicRanges GRanges
+#' @importFrom IRanges IRanges RangesList Views countOverlaps
+#' @importFrom GenomeInfoDb seqnames
+#' @export
+getcoverage.scDNA=function (bambedObj, mapqthres, mask.ref, seq)
 {
 	ref <- bambedObj$ref
 	bamdir <- bambedObj$bamdir
 	sampname <- bambedObj$sampname
-  
+
 	Y=matrix(nrow=length(ref), ncol=length(sampname))
 	rownames(Y) = paste(seqnames(ref), ":", start(ref), "-", end(ref), sep = "")
 	colnames(Y) = sampname
@@ -11,14 +33,14 @@ getcoverage.scDNA=function (bambedObj, mapqthres, mask.ref, seq)
 		bamurl <- bamdir[i]
 		what <- c("rname","pos", "mapq", "qwidth")
 		if(seq=='paired-end'){
-			flag <- scanBamFlag(isPaired=TRUE, isDuplicate = FALSE, isUnmappedQuery = FALSE, 
+			flag <- scanBamFlag(isPaired=TRUE, isDuplicate = FALSE, isUnmappedQuery = FALSE,
 								isNotPassingQualityControls = FALSE, isFirstMateRead = TRUE)
 			param <- ScanBamParam(what = what, flag = flag)
 			bam <- scanBam(bamurl, param = param)[[1]]
 		} else if (seq=='single-end'){
-			flag <- scanBamFlag(isPaired=FALSE, isDuplicate = FALSE, isUnmappedQuery = FALSE, 
+			flag <- scanBamFlag(isPaired=FALSE, isDuplicate = FALSE, isUnmappedQuery = FALSE,
 								isNotPassingQualityControls = FALSE)
-			param <- ScanBamParam(what = what, 
+			param <- ScanBamParam(what = what,
 								  flag = flag)
 			bam <- scanBam(bamurl, param = param)[[1]]
 		}

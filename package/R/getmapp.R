@@ -1,3 +1,30 @@
+if(getRversion() >= "2.15.1"){
+  utils::globalVariables(c("BSgenome.Hsapiens.UCSC.hg19", "mapp_hg19", "mapp_hg38", "seqlevelsStyle<-"))
+}
+#' @title Compute mappability
+#' @name getmapp
+#'
+#' @description Compute mappability for each bin. Note that scDNA sequencing is
+#' whole-genome amplification and the mappability score is essential to
+#' determine variable binning method. Mappability track for 100-mers on the
+#' GRCh37/hg19 human reference genome from ENCODE is pre-saved. Compute the mean
+#' of mappability scores that overlapped reads map to bins, weighted by the width
+#' of mappability tracks on the genome reference. Use liftOver utility to calculate
+#' mappability for hg38, which is pre-saved as well.
+#'
+#' @param ref GRanges object returned from \code{\link[CODEX2]{getbambed}}
+#' @param genome by default, \code{genome = BSgenome.Hsapiens.UCSC.hg19}.
+#' To calculate mappability for hg38, specify \code{genome = BSgenome.Hsapiens.UCSC.hg38}
+#'
+#' @return
+#'   \item{mapp}{Vector of mappability for each bin/target}
+#'
+#' @author Rujin Wang \email{rujin@email.unc.edu}
+#' @import BSgenome.Hsapiens.UCSC.hg19 utils
+#' @importFrom GenomicRanges GRanges
+#' @importFrom IRanges IRanges RangesList Views countOverlaps findOverlaps width
+#' @importFrom GenomeInfoDb mapSeqlevels seqlevelsStyle seqnames
+#' @export
 getmapp = function (ref, genome = NULL) {
   if(is.null(genome)){genome = BSgenome.Hsapiens.UCSC.hg19}
   if(genome@provider_version == 'hg19'){mapp_gref = mapp_hg19}

@@ -1,3 +1,18 @@
+#' @title Get QC metrics for single cells
+#'
+#' @description Perform QC step on single cells.
+#'
+#' @param bambedObj object returned from \code{\link[CODEX2]{getbambed}}
+#'
+#' @return
+#'   \item{QCmetric}{A matrix containing total number/proportion of reads,
+#'    total number/proportion of mapped reads, total number/proportion of mapped
+#'    non-duplicate reads, and number/proportion of reads with mapping quality
+#'    greater than 20}
+#'
+#' @author Rujin Wang \email{rujin@email.unc.edu}
+#' @import Rsamtools
+#' @export
 getsampQC=function(bambedObj){
   ref <- bambedObj$ref
   bamdir <- bambedObj$bamdir
@@ -17,8 +32,8 @@ getsampQC=function(bambedObj){
     temp3=sum(!is.na(aln$rname) & aln$flag < 1024) # total mapped non-duplicate reads
     # https://broadinstitute.github.io/picard/explain-flags.html
     temp4=sum(aln$flag < 1024 & aln$mapq>=20,na.rm=T)
-    QCmetric[i,]=c(temp0, temp1, temp2, round(temp2/temp1,3), 
-                   temp3, round(temp3/temp1,3), 
+    QCmetric[i,]=c(temp0, temp1, temp2, round(temp2/temp1,3),
+                   temp3, round(temp3/temp1,3),
                    temp4, round(temp4/temp1,3))
   }
   return(QCmetric)
