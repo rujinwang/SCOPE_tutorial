@@ -21,7 +21,7 @@ SCOPE is a statistical framework designed for calling copy number variants (CNVs
 
 ```{r, out.width = "300px", fig.align = "center", echo=FALSE}
 # knitr::include_graphics("/Users/rujin/writing/SCOPE_Git//Figures/Figure1_outline.JPG")
-knitr::include_graphics("H:/writing/SCOPE_Git/Figures/Figure1_outline.JPG")
+knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Figure1_SCOPE_outline.jpg")
 ```
 
 ```{r Comment1, echo = FALSE}
