@@ -276,7 +276,89 @@ $(document).ready(function () {
 </div>
 <div id="bioinformatic-pre-processing" class="section level2">
 <h2>1.2 Bioinformatic pre-processing</h2>
-<p>There are two types of scDNA-seq data sources: public data from NCBI Sequence Read Archive and data from 10X Genomics. For the NCBI SRA data, start with the SRA files. Fastq-dump to obtain FASTQ files. Align FASTQ sequences to NCBI hg19 reference genome and convert to sorted BAM files. Add read group and use deduped BAM files as the input. For the 10X Genomic datasets, process from the original integrated BAM file. Error-corrected chromium cellular barcode information for each read is stored as CB tag fields. Only reads that contain CB tags and are in the list of barcode of interest are demultiplexed via a Python script. Approximately 82% reads are de-multiplexed and used for further analysis. Sort, add read group, and dedup after the bam splitting step. Use deduped BAM files as the input.</p>
+<p>There are two types of scDNA-seq data sources: public data from NCBI Sequence Read Archive and data from 10X Genomics. For the NCBI SRA data, start with the SRA files. Fastq-dump to obtain FASTQ files. Align FASTQ sequences to NCBI hg19 reference genome and convert to sorted BAM files. Add read group and use deduped BAM files as the input.</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="co"># Step 1. Get SRA info using R</span>
+<span class="bu">source</span>(<span class="st">'http://bioconductor.org/biocLite.R'</span>)
+<span class="ex">biocLite</span>(<span class="st">'SRAdb'</span>)
+<span class="ex">library</span>(SRAdb)
+<span class="ex">srafile</span> = getSRAdbFile()
+<span class="ex">library</span>(DBI)
+<span class="ex">con</span> = dbConnect(RSQLite::SQLite(), <span class="ex">srafile</span>)
+<span class="ex">sra.files</span>=listSRAfile(<span class="st">'SRPXXXXXX'</span>,con) <span class="co"># Replace 'SRPXXXXXX' with the Accession Number from NCBI Sequence Read Archive</span>
+<span class="ex">write.table</span>(sra.files, file = <span class="st">'sra.files.txt'</span>, sep = <span class="st">'\t'</span>, row.names = F, col.names = T, quote = F)
+
+<span class="va">SRR=</span>SRR5964215
+<span class="va">sra_name=</span>SRR5964215.sra
+<span class="va">sra_link=</span>ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/SRR596/SRR5964215/SRR5964215.sra
+<span class="va">kim=</span>/pine/scr/r/u/rujin/Kim_Navin_et_al_Cell_2018
+<span class="va">sra_dir=$kim</span>/sra
+<span class="va">fastq_dir=$kim</span>/fastq
+<span class="va">align_dir=$kim</span>/align
+
+<span class="co"># Step 2. Download SRA</span>
+<span class="fu">wget</span> <span class="va">$sra_link</span> -P <span class="va">$sra_dir</span>
+
+<span class="co"># Step 3. Fastq-dump to obtain FASTQ files</span>
+<span class="ex">fastq-dump.2.9.0</span> -I -O <span class="va">$fastq_dir</span> --split-files <span class="va">$sra_dir</span>/<span class="va">$sra_name</span>
+
+<span class="co"># Step 4. Align FASTQ sequences to NCBI hg19 reference genome (Single-end sequencing cells have only 1 FASTQ file; paired-end sequencing would generate two FASTQ files, with suffix &quot;_1&quot; and &quot;_2&quot;)</span>
+<span class="bu">cd</span> <span class="va">$fastq_dir</span>
+<span class="ex">bwa</span> mem -M -t 16 \
+    ucsc.hg19.fasta <span class="kw">`</span><span class="fu">ls</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">tr</span> <span class="st">'\n'</span> <span class="st">' '</span><span class="kw">`</span> <span class="op">&gt;</span> <span class="va">$align_dir</span>/<span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span>.sam
+
+<span class="co"># Step 5. Convert .sam to .bam</span>
+<span class="bu">cd</span> <span class="va">$align_dir</span>
+<span class="ex">samtools</span> view -bS <span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span>.sam <span class="op">&gt;</span> <span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span>.bam
+
+<span class="co"># Step 6. Sort</span>
+<span class="ex">java</span> -Xmx30G -jar /proj/yuchaojlab/bin/picard.jar SortSam \
+    INPUT=<span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span>.bam OUTPUT=<span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span>.sorted.bam \
+    SORT_ORDER=coordinate
+
+<span class="co"># Step 7: Add read group</span>
+<span class="ex">java</span> -Xmx40G -jar /proj/yuchaojlab/bin/picard.jar AddOrReplaceReadGroups \
+    I=<span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span>.sorted.bam O=<span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span>.sorted.rg.bam RGID=<span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span> \
+    RGLB=Chung_Et_Al RGPL=ILLUMINA RGPU=machine RGSM=<span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span>
+<span class="ex">samtools</span> index <span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span>.sorted.rg.bam
+
+<span class="co"># Step 8: Dedup</span>
+<span class="ex">java</span> -Xmx40G -jar /proj/yuchaojlab/bin/picard.jar MarkDuplicates \
+    REMOVE_DUPLICATES=true \
+    I=<span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span>.sorted.rg.bam O=<span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span>.sorted.rg.dedup.bam \
+    METRICS_FILE=<span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span>.sorted.rg.dedup.metrics.txt \
+    PROGRAM_RECORD_ID= MarkDuplicates PROGRAM_GROUP_VERSION=null \
+    PROGRAM_GROUP_NAME=MarkDuplicates
+<span class="ex">java</span> -jar /proj/yuchaojlab/bin/picard.jar BuildBamIndex I=<span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span>.sorted.rg.dedup.bam</code></pre></div>
+<p>For the 10X Genomic datasets, process from the original integrated BAM file. Error-corrected chromium cellular barcode information for each read is stored as CB tag fields. Only reads that contain CB tags and are in the list of barcode of interest are demultiplexed via a Python script. Approximately 82% reads are de-multiplexed and used for further analysis. Sort, add read group, and dedup after the bam splitting step. Use deduped BAM files as the input.</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="va">XGenomics=</span>/pine/scr/r/u/rujin/10XGenomics
+<span class="va">dataset=</span>breast_tissue_A_2k
+<span class="va">fastq_dir=$XGenomics</span>/<span class="va">$dataset</span>/fastq
+<span class="va">output_dir=$XGenomics</span>/<span class="va">$dataset</span>/output
+<span class="va">align_dir=$XGenomics</span>/<span class="va">$dataset</span>/align
+
+<span class="co"># Step 1. Download integrated bam file from 10X Genomics</span>
+<span class="fu">wget</span> http://cf.10xgenomics.com/samples/cell-dna/1.0.0/breast_tissue_A_2k/breast_tissue_A_2k_per_cell_summary_metrics.csv -P <span class="va">$output_dir</span>
+<span class="fu">wget</span> http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-dna/1.0.0/breast_tissue_A_2k/breast_tissue_A_2k_possorted_bam.bam -P <span class="va">$output_dir</span>
+<span class="fu">wget</span> http://cf.10xgenomics.com/samples/cell-dna/1.0.0/breast_tissue_A_2k/breast_tissue_A_2k_possorted_bam.bam.bai -P <span class="va">$output_dir</span>
+
+<span class="co"># Step 2. Demultiplex</span>
+<span class="bu">cd</span> <span class="va">$output_dir</span>
+<span class="ex">samtools</span> view <span class="va">${dataset}</span>_possorted_bam.bam <span class="kw">|</span> <span class="ex">python</span> <span class="va">$XGenomics</span>/split_script.py
+
+<span class="co"># Step 3. Add header to demultiplexed bam files for further processing</span>
+<span class="bu">cd</span> <span class="va">$XGenomics</span>
+<span class="ex">samtools</span> view -H <span class="va">$dataset</span>/output/<span class="va">${dataset}</span>_possorted_bam.bam <span class="op">&gt;</span> <span class="va">$dataset</span>/header.txt
+<span class="va">barcode=</span>AAAGATGGTGTAAAGT
+<span class="fu">cat</span> header.txt <span class="va">$align_dir</span>/<span class="va">$barcode</span>/<span class="va">$barcode</span>-1.sam <span class="op">&gt;</span> <span class="va">$align_dir</span>/<span class="va">$barcode</span>/<span class="va">$barcode</span>-1.header.sam
+
+<span class="co"># Step 4. Convert .sam to .bam</span>
+<span class="bu">cd</span> <span class="va">$align_dir</span>/<span class="va">$barcode</span>
+<span class="ex">samtools</span> view -bS <span class="st">&quot;</span><span class="va">$barcode</span><span class="st">&quot;</span>-1.header.sam <span class="op">&gt;</span> <span class="st">&quot;</span><span class="va">$barcode</span><span class="st">&quot;</span>.bam
+
+<span class="co"># Step 5. Sort</span>
+<span class="co"># Step 6. Add read group</span>
+<span class="co"># Step 7. Dedup</span>
+<span class="co"># Follow the same Sort, Add read group, and Dedup procedure as previously described. </span></code></pre></div>
 </div>
 <div id="mappability" class="section level2">
 <h2>1.3 Mappability</h2>
