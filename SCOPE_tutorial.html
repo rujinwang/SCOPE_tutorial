@@ -301,7 +301,7 @@ $(document).ready(function () {
 <span class="co"># Step 3. Fastq-dump to obtain FASTQ files</span>
 <span class="ex">fastq-dump.2.9.0</span> -I -O <span class="va">$fastq_dir</span> --split-files <span class="va">$sra_dir</span>/<span class="va">$sra_name</span>
 
-<span class="co"># Step 4. Align FASTQ sequences to NCBI hg19 reference genome (Single-end sequencing cells have only 1 FASTQ file; paired-end sequencing would generate two FASTQ files, with suffix &quot;_1&quot; and &quot;_2&quot;)</span>
+<span class="co"># Step 4. Align FASTQ sequences to NCBI hg19 reference genome (Single-end sequenced cells have only 1 FASTQ file; paired-end sequencing would generate two FASTQ files, with suffix &quot;_1&quot; and &quot;_2&quot;)</span>
 <span class="bu">cd</span> <span class="va">$fastq_dir</span>
 <span class="ex">bwa</span> mem -M -t 16 \
     ucsc.hg19.fasta <span class="kw">`</span><span class="fu">ls</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span> <span class="kw">|</span> <span class="fu">tr</span> <span class="st">'\n'</span> <span class="st">' '</span><span class="kw">`</span> <span class="op">&gt;</span> <span class="va">$align_dir</span>/<span class="st">&quot;</span><span class="va">$SRR</span><span class="st">&quot;</span>.sam

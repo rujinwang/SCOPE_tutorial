@@ -58,7 +58,7 @@ wget $sra_link -P $sra_dir
 # Step 3. Fastq-dump to obtain FASTQ files
 fastq-dump.2.9.0 -I -O $fastq_dir --split-files $sra_dir/$sra_name
 
-# Step 4. Align FASTQ sequences to NCBI hg19 reference genome (Single-end sequencing cells have only 1 FASTQ file; paired-end sequencing would generate two FASTQ files, with suffix "_1" and "_2")
+# Step 4. Align FASTQ sequences to NCBI hg19 reference genome (Single-end sequenced cells have only 1 FASTQ file; paired-end sequencing would generate two FASTQ files, with suffix "_1" and "_2")
 cd $fastq_dir
 bwa mem -M -t 16 \
 	ucsc.hg19.fasta `ls | grep "$SRR" | tr '\n' ' '` > $align_dir/"$SRR".sam
