@@ -1,21 +1,43 @@
-normalize_codex2_ns_noK_EM_random = function (Y_qc, gc_qc, K, norm_index, N, numGroup, qc.thres = 5e-5, min.prop = 2e-3) {
-  if (max(K) > length(norm_index))
-    stop("Number of latent Poisson factors K cannot exceed the number of 
-         normal samples!")
+#' @title Normalization of read depth without latent factors using Expectation-Maximization algorithm
+#'  under the case-control setting
+#'
+#' @description Fit a Poisson generalized linear model to normalize the raw read depth data from
+#'  single-cell DNA sequencing, without latent factors under the case-control setting. Model GC
+#'  content bias using an expectation-maximization algorithm, which accounts for the different
+#'  copy number states.
+#'
+#' @param Y_qc read depth matrix after quality control
+#' @param gc_qc vector of GC content for each bin after quality control
+#' @param K default is \code{K = 1}
+#' @param norm_index indices of normal/diploid cells
+#' @param N library size factor, which is computed from the genome-wide read depth data
+#' @param numGroup a vector of integers indicating number of CNV groups. Use BIC to select optimal
+#'  number of CNV groups. If \code{numGroup = 1}, assume all reads are from normal regions so that
+#'  EM algorithm is not implemented. Otherwise, we assume there is always a CNV group of heterozygous
+#'  deletion and a group of null region. The rest groups are representative of different duplication
+#'  states.
+#' @param qc.thres the lower bound of bin-specific GC content bias threshold
+#' @param min.prop the minmimum of mixture proportion for candidate CNV groups,
+#' which serves as a stopping metric for EM algorithm
+#'
+#' @return A list with components
+#'   \item{Yhat}{A list of normalized read depth matrix with EM}
+#'   \item{fGC.hat}{A list of EM estimated GC content bias matrix}
+#'   \item{beta.hat}{A list of EM estimated bin-specific bias vector}
+#'
+#' @author Rujin Wang \email{rujin@email.unc.edu}
+#' @import stats
+#' @export
+normalize_codex2_ns_noK_EM_random = function (Y_qc, gc_qc, K = 1, norm_index, N, numGroup, qc.thres = 5e-5, min.prop = 2e-3) {
   Ntotal <- N
   N <- round(N/median(N)*median(colSums(Y_qc)))
   Nmat <- matrix(nrow = nrow(Y_qc), ncol = ncol(Y_qc), data = N, byrow = TRUE)
   Yhat = list(length = length(K))
   fGC.hat <- list(length = length(K))
   beta.hat <- list(length = length(K))
-  g.hat <- list(length = length(K))
-  h.hat <- list(length = length(K))
-  AIC <- rep(NA, length = length(K))
-  BIC <- rep(NA, length = length(K))
-  RSS <- rep(NA, length = length(K))
   for (ki in 1:length(K)) {
     k = K[ki]
-    message("Computing normalization with k = ", k, " latent factors ...",sep="")
+    message("Computing normalization with no latent factors ...")
     message("k = ", k)
     maxiter = 10
     maxhiter = 50
@@ -25,18 +47,14 @@ normalize_codex2_ns_noK_EM_random = function (Y_qc, gc_qc, K, norm_index, N, num
     fhat = matrix(nrow = nrow(Y_qc), ncol = ncol(Y_qc), data = 0)
     fhatnew = matrix(nrow = nrow(Y_qc), ncol = ncol(Y_qc))
     betahat = rep(1, nrow(Y_qc))
-    betahatmat = matrix(nrow = nrow(Y_qc), ncol = ncol(Y_qc), 
+    betahatmat = matrix(nrow = nrow(Y_qc), ncol = ncol(Y_qc),
                         data = betahat, byrow = FALSE)
-    ghat = matrix(0, nrow = nrow(Y_qc), ncol = k)
-    hhat = matrix(0, nrow = ncol(Y_qc), ncol = k)
     bhdiff = rep(Inf, maxiter)
     fhdiff = rep(Inf, maxiter)
     betahatlist = list(length = maxiter)
     fhatlist = list(length = maxiter)
-    ghatlist = list(length = maxiter)
-    hhatlist = list(length = maxiter)
     while (iter <= maxiter) {
-      gcfit = Y_qc/Nmat/betahatmat/exp(ghat %*% t(hhat))
+      gcfit = Y_qc/Nmat/betahatmat
       if(iter>2){
         for(j in 1:ncol(gcfit)){
           cat(j,'\t')
@@ -57,23 +75,21 @@ normalize_codex2_ns_noK_EM_random = function (Y_qc, gc_qc, K, norm_index, N, num
           temp[temp <= 0] <- min(temp[temp > 0])
           temp})
       }
-      betahatnew = apply((Y_qc/(fhatnew * Nmat * exp(ghat %*% t(hhat))))[,norm_index], 1, median)
+      betahatnew = apply((Y_qc/(fhatnew * Nmat))[,norm_index], 1, median)
       betahatnew[betahatnew <= 0] = min(betahatnew[betahatnew > 0])
       bhdiff[iter] = sum((betahatnew - betahat)^2)/length(betahat)
       fhdiff[iter] = sum((fhatnew - fhat)^2)/length(fhat)
-      message("Iteration ", iter, "\t", "beta diff =", signif(bhdiff[iter], 
+      message("Iteration ", iter, "\t", "beta diff =", signif(bhdiff[iter],
                                                               3), "\t", "f(GC) diff =", signif(fhdiff[iter], 3))
       fhat = fhatnew
       betahat = betahatnew
-      betahatmat = matrix(nrow = nrow(Y_qc), ncol = ncol(Y_qc), 
+      betahatmat = matrix(nrow = nrow(Y_qc), ncol = ncol(Y_qc),
                           data = betahat, byrow = FALSE)
       fhatlist[[iter]] = fhat
       betahatlist[[iter]] = betahat
-      ghatlist[[iter]] = ghat
-      hhatlist[[iter]] = hhat
-      if (bhdiff[iter] < BHTHRESH & iter >2) 
+      if (bhdiff[iter] < BHTHRESH & iter >2)
         break
-      if (iter > 5 & bhdiff[iter] > 1) 
+      if (iter > 5 & bhdiff[iter] > 1)
         break
       iter = iter + 1
     }
@@ -84,25 +100,11 @@ normalize_codex2_ns_noK_EM_random = function (Y_qc, gc_qc, K, norm_index, N, num
     }
     fhat = fhatlist[[iter]]
     betahat = betahatlist[[iter]]
-    ghat = ghatlist[[iter]]
-    hhat = hhatlist[[iter]]
-    betahatmat = matrix(nrow = nrow(Y_qc), ncol = ncol(Y_qc), 
+    betahatmat = matrix(nrow = nrow(Y_qc), ncol = ncol(Y_qc),
                         data = betahat, byrow = FALSE)
-    Yhat[[ki]] = pmax(round(fhat * Nmat * betahatmat * exp(ghat %*% t(hhat)),0),1)
+    Yhat[[ki]] = pmax(round(fhat * Nmat * betahatmat,0),1)
     fGC.hat[[ki]] <- signif(fhat, 3)
     beta.hat[[ki]] <- signif(betahat, 3)
-    h.hat[[ki]] <- signif(hhat, 3)
-    g.hat[[ki]] <- signif(ghat, 3)
-    AIC[ki] = 2 * sum(Y_qc * log(pmax(Yhat[[ki]],1)) - Yhat[[ki]]) - 
-      2 * (length(ghat) + length(hhat))
-    BIC[ki] = 2 * sum(Y_qc * log(pmax(Yhat[[ki]],1)) - Yhat[[ki]]) - 
-      (length(ghat) + length(hhat)) * log(length(Y_qc))
-    RSS[ki] = sum((Y_qc - Yhat[[ki]])^2/length(Y_qc))
-    message("AIC", k, " = ", round(AIC[ki], 3))
-    message("BIC", k, " = ", round(BIC[ki], 3))
-    message("RSS", k, " = ", round(RSS[ki], 3), "\n")
   }
-  list(Yhat = Yhat, fGC.hat = fGC.hat, beta.hat = beta.hat, 
-       g.hat = g.hat, h.hat = h.hat, AIC = AIC, BIC = BIC, RSS = RSS, 
-       K = K)
+  list(Yhat = Yhat, fGC.hat = fGC.hat, beta.hat = beta.hat)
 }
