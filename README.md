@@ -33,5 +33,5 @@ The flowchart below outlines the procedures for profiling single-cell CNV. The f
 </p>
 
 ## Running SCOPE
-**Tutorial** is available [**here**](http://htmlpreview.github.io/?https://github.com/rujinwang/SCOPE/blob/master/SCOPE_tutorial.html)
+**Tutorial** is available [**here**](http://raw.githubusercontent.com/rujinwang/SCOPE/blob/master/SCOPE_tutorial.html)
 
