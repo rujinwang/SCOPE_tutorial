@@ -5,11 +5,11 @@
 \title{Normalization of read depth with latent factors using Expectation-Maximization algorithm
  under the case-control setting}
 \usage{
-normalize_scope(Y, gc_qc, K, norm_index, N, T, alpha0, beta0,
+normalize_scope(Y_qc, gc_qc, K, norm_index, N, T, alpha0, beta0,
   minCountQC = 20)
 }
 \arguments{
-\item{Y}{read depth matrix after quality control}
+\item{Y_qc}{read depth matrix after quality control}
 
 \item{gc_qc}{vector of GC content for each bin after quality control}
 
