@@ -141,7 +141,7 @@ head(mapp)
 ```
 
 Note that SCOPE can also be adapted to the mouse genome (mm10) in a similar way (see [CODEX2 for mouse genome](https://github.com/yuchaojiang/CODEX2/blob/master/README.md#codex2-for-mouse-genome)). For unknown reference assembly without pre-calculated mappability track, refer to [CODEX2: mappability pre-calculation](https://github.com/yuchaojiang/CODEX2/blob/master/mouse/mapp.R). 
-
+http://htmlpreview.github.io/?https://github.com/yuchaojiang/CODEX2/blob/master/README.md#codex2-for-mouse-genome
 
 # 2. Pre-computation and Quality Control
 ## 2.1 Pre-preparation
