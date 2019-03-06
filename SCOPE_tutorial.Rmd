@@ -104,7 +104,7 @@ samtools view -bS "$barcode"-1.header.sam > "$barcode".bam
 ```
 
 ## 1.3 Mappability
-By default, SCOPE is intended for hg19 reference genome. Note that scDNA sequencing is whole-genome amplification and the mappability score is essential to determine variable binning method. To compute mappability in hg19, we download mappability tracks for 100-mers on the GRCh37/hg19 human reference genome from ENCODE ( `wgEncodeCrgMapabilityAlign100mer.bigwig` from [this link](http://rohsdb.cmb.usc.edu/GBshape/cgi-bin/hgFileUi?db=hg19&g=wgEncodeMapability)). For SCOPE, the whole-genome mappability track on human hg19 assembly is stored as part of the package. Mappability for each target/bin is calculated in the same way as [CODEX2](https://github.com/yuchaojiang/CODEX2/blob/master/README.md#codex2-for-hg38). We further filter out bins with low mappability (mappability < 0.9) to reduce artifacts.
+By default, SCOPE is intended for hg19 reference genome. Note that scDNA sequencing is whole-genome amplification and the mappability score is essential to determine variable binning method. To compute mappability in hg19, we download mappability tracks for 100-mers on the GRCh37/hg19 human reference genome from ENCODE ( `wgEncodeCrgMapabilityAlign100mer.bigwig` from [this link](http://rohsdb.cmb.usc.edu/GBshape/cgi-bin/hgFileUi?db=hg19&g=wgEncodeMapability)). For SCOPE, the whole-genome mappability track on human hg19 assembly is stored as part of the package. Mappability for each target/bin is calculated in the same way as [CODEX2](https://github.com/yuchaojiang/CODEX2/blob/master/README.md). We further filter out bins with low mappability (mappability < 0.9) to reduce artifacts.
 ```{r Comment2, echo = FALSE}
 # Previous description: Compute the mean of mappability scores that overlapped reads map to bins, weighted by the width of mappability tracks on the genome reference. 
 ```
@@ -121,7 +121,7 @@ mapp <- getmapp(ref)
 head(mapp)
 ```
 
-The whole-genome mappability track on human hg38 assembly is also stored in SCOPE package. For more details on mappability calculation, please refer to [CODEX2 for hg38](https://github.com/yuchaojiang/CODEX2/blob/master/README.md#codex2-for-hg38). 
+The whole-genome mappability track on human hg38 assembly is also stored in SCOPE package. For more details on mappability calculation, please refer to [CODEX2 for hg38](https://github.com/yuchaojiang/CODEX2/blob/master/README.md). 
 
 ```{r Comment4, echo = FALSE}
 # To calculate mappability for hg38, we download `hg19ToHg38.over.chain` from [this link](http://hgdownload.cse.ucsc.edu/goldenPath/hg19/liftOver/). This liftOver utility `hg19ToHg38.over.chain` contains the
@@ -140,8 +140,7 @@ mapp <- getmapp(ref, genome = BSgenome.Hsapiens.UCSC.hg38)
 head(mapp)
 ```
 
-Note that SCOPE can also be adapted to the mouse genome (mm10) in a similar way (see [CODEX2 for mouse genome](https://github.com/yuchaojiang/CODEX2/blob/master/README.md#codex2-for-mouse-genome)). For unknown reference assembly without pre-calculated mappability track, refer to [CODEX2: mappability pre-calculation](https://github.com/yuchaojiang/CODEX2/blob/master/mouse/mapp.R). 
-http://htmlpreview.github.io/?https://github.com/yuchaojiang/CODEX2/blob/master/README.md#codex2-for-mouse-genome
+Note that SCOPE can also be adapted to the mouse genome (mm10) in a similar way (see [CODEX2 for mouse genome](https://github.com/yuchaojiang/CODEX2/blob/master/README.md)). For unknown reference assembly without pre-calculated mappability track, refer to [CODEX2: mappability pre-calculation](https://github.com/yuchaojiang/CODEX2/blob/master/mouse/mapp.R).
 
 # 2. Pre-computation and Quality Control
 ## 2.1 Pre-preparation
