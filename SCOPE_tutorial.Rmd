@@ -19,7 +19,7 @@ SCOPE is a statistical framework designed for calling copy number variants (CNVs
 
 3. Incorporates multi-sample segmentation procedure to identify breakpoints that are shared across cells from the same genetic background
 
-```{r, out.width = "300px", fig.align = "center", echo=FALSE}
+```{r, out.width = "200px", fig.align = "center", echo=FALSE}
 # knitr::include_graphics("/Users/rujin/writing/SCOPE_Git//Figures/Figure1_outline.JPG")
 knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Figure1_SCOPE_outline.jpg")
 ```
@@ -32,53 +32,41 @@ knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Figure
 
 ## 1.2 Bioinformatic pre-processing
 
-There are two types of scDNA-seq data sources: public data from NCBI Sequence Read Archive and data from 10X Genomics. For the NCBI SRA data, start with the SRA files. Fastq-dump to obtain FASTQ files. Align FASTQ sequences to NCBI hg19 reference genome and convert to sorted BAM files. Add read group and use deduped BAM files as the input. 
-```{bash, eval = FALSE}
-# Step 1. Get SRA info using R
-source('http://bioconductor.org/biocLite.R')
-biocLite('SRAdb')
-library(SRAdb)
-srafile = getSRAdbFile()
-library(DBI)
-con = dbConnect(RSQLite::SQLite(), srafile)
-sra.files=listSRAfile('SRPXXXXXX',con) # Replace 'SRPXXXXXX' with the Accession Number from NCBI Sequence Read Archive
-write.table(sra.files, file = 'sra.files.txt', sep = '\t', row.names = F, col.names = T, quote = F)
+There are two types of scDNA-seq data sources: public data from NCBI Sequence Read Archive and data from 10X Genomics. For the NCBI SRA data, start with the SRA files. Fastq-dump to obtain FASTQ files. Align FASTQ sequences to NCBI hg19 reference genome and convert to BAM files. For the 10X Genomic datasets, process from the original integrated BAM file. Error-corrected chromium cellular barcode information for each read is stored as CB tag fields. Only reads that contain CB tags and are in the list of barcode of interest are demultiplexed via a Python script. Sort, add read group, and dedup on aligned/demultiplexed BAMs. Use deduped BAM files as the input. 
 
+```{bash, eval = FALSE}
+##############################################################################################
+# public data from NCBI Sequence Read Archive
 SRR=SRR5964215
-sra_name=SRR5964215.sra
-sra_link=ftp://ftp-trace.ncbi.nlm.nih.gov/sra/sra-instant/reads/ByRun/sra/SRR/SRR596/SRR5964215/SRR5964215.sra
 kim=/pine/scr/r/u/rujin/Kim_Navin_et_al_Cell_2018
 sra_dir=$kim/sra
 fastq_dir=$kim/fastq
 align_dir=$kim/align
 
-# Step 2. Download SRA
-wget $sra_link -P $sra_dir
+# Fastq-dump to obtain FASTQ files
+fastq-dump.2.9.0 -I -O $fastq_dir --split-files $sra_dir/$SRR.sra
 
-# Step 3. Fastq-dump to obtain FASTQ files
-fastq-dump.2.9.0 -I -O $fastq_dir --split-files $sra_dir/$sra_name
-
-# Step 4. Align FASTQ sequences to NCBI hg19 reference genome (Single-end sequenced cells have only 1 FASTQ file; paired-end sequencing would generate two FASTQ files, with suffix "_1" and "_2")
+# Align FASTQ sequences to NCBI hg19 reference genome (Single-end sequenced cells have only 1 FASTQ file; paired-end sequencing would generate two FASTQ files, with suffix "_1" and "_2")
 cd $fastq_dir
 bwa mem -M -t 16 \
 	ucsc.hg19.fasta `ls | grep "$SRR" | tr '\n' ' '` > $align_dir/"$SRR".sam
 
-# Step 5. Convert .sam to .bam
+# Convert .sam to .bam
 cd $align_dir
 samtools view -bS "$SRR".sam > "$SRR".bam
 
-# Step 6. Sort
+# Sort
 java -Xmx30G -jar /proj/yuchaojlab/bin/picard.jar SortSam \
 	INPUT="$SRR".bam OUTPUT="$SRR".sorted.bam \
 	SORT_ORDER=coordinate
 
-# Step 7: Add read group
+# Add read group
 java -Xmx40G -jar /proj/yuchaojlab/bin/picard.jar AddOrReplaceReadGroups \
 	I="$SRR".sorted.bam O="$SRR".sorted.rg.bam RGID="$SRR" \
 	RGLB=Chung_Et_Al RGPL=ILLUMINA RGPU=machine RGSM="$SRR"
 samtools index "$SRR".sorted.rg.bam
 
-# Step 8: Dedup
+# Dedup
 java -Xmx40G -jar /proj/yuchaojlab/bin/picard.jar MarkDuplicates \
 	REMOVE_DUPLICATES=true \
 	I="$SRR".sorted.rg.bam O="$SRR".sorted.rg.dedup.bam \
@@ -86,44 +74,37 @@ java -Xmx40G -jar /proj/yuchaojlab/bin/picard.jar MarkDuplicates \
 	PROGRAM_RECORD_ID= MarkDuplicates PROGRAM_GROUP_VERSION=null \
 	PROGRAM_GROUP_NAME=MarkDuplicates
 java -jar /proj/yuchaojlab/bin/picard.jar BuildBamIndex I="$SRR".sorted.rg.dedup.bam
-```
 
-For the 10X Genomic datasets, process from the original integrated BAM file. Error-corrected chromium cellular barcode information for each read is stored as CB tag fields. Only reads that contain CB tags and are in the list of barcode of interest are demultiplexed via a Python script. Approximately 82% reads are de-multiplexed and used for further analysis. Sort, add read group, and dedup after the bam splitting step. Use deduped BAM files as the input. 
-
-```{bash, eval = FALSE}
+##############################################################################################
+# 10X Genomics
 XGenomics=/pine/scr/r/u/rujin/10XGenomics
 dataset=breast_tissue_A_2k
 fastq_dir=$XGenomics/$dataset/fastq
 output_dir=$XGenomics/$dataset/output
 align_dir=$XGenomics/$dataset/align
 
-# Step 1. Download integrated bam file from 10X Genomics
-wget http://cf.10xgenomics.com/samples/cell-dna/1.0.0/breast_tissue_A_2k/breast_tissue_A_2k_per_cell_summary_metrics.csv -P $output_dir
-wget http://s3-us-west-2.amazonaws.com/10x.files/samples/cell-dna/1.0.0/breast_tissue_A_2k/breast_tissue_A_2k_possorted_bam.bam -P $output_dir
-wget http://cf.10xgenomics.com/samples/cell-dna/1.0.0/breast_tissue_A_2k/breast_tissue_A_2k_possorted_bam.bam.bai -P $output_dir
-
-# Step 2. Demultiplex
+# Demultiplex
 cd $output_dir
 samtools view ${dataset}_possorted_bam.bam | python $XGenomics/split_script.py
 
-# Step 3. Add header to demultiplexed bam files for further processing
+# Add header to demultiplexed bam files for further processing
 cd $XGenomics
 samtools view -H $dataset/output/${dataset}_possorted_bam.bam > $dataset/header.txt
 barcode=AAAGATGGTGTAAAGT
 cat header.txt $align_dir/$barcode/$barcode-1.sam > $align_dir/$barcode/$barcode-1.header.sam
 
-# Step 4. Convert .sam to .bam
+# Convert .sam to .bam
 cd $align_dir/$barcode
 samtools view -bS "$barcode"-1.header.sam > "$barcode".bam
 
-# Step 5. Sort
-# Step 6. Add read group
-# Step 7. Dedup
+# Sort
+# Add read group
+# Dedup
 # Follow the same Sort, Add read group, and Dedup procedure as previously described. 
 ```
 
 ## 1.3 Mappability
-By default, SCOPE is intended for hg19 reference genome. Note that scDNA sequencing is whole-genome amplification and the mappability score is essential to determine variable binning method. To compute mappability in hg19, we download mappability tracks for 100-mers on the GRCh37/hg19 human reference genome from ENCODE ( `wgEncodeCrgMapabilityAlign100mer.bigwig` from [this link](http://rohsdb.cmb.usc.edu/GBshape/cgi-bin/hgFileUi?db=hg19&g=wgEncodeMapability)). For SCOPE, the whole-genome mappability track on human hg19 assembly is stored as part of the package. Mappability for each target/bin is calculated in the same way as [CODEX2](https://github.com/yuchaojiang/CODEX2#codex2-for-hg38). We further filter out bins with low mappability (mappability < 0.9) to reduce artifacts.
+By default, SCOPE is intended for hg19 reference genome. Note that scDNA sequencing is whole-genome amplification and the mappability score is essential to determine variable binning method. To compute mappability in hg19, we download mappability tracks for 100-mers on the GRCh37/hg19 human reference genome from ENCODE ( `wgEncodeCrgMapabilityAlign100mer.bigwig` from [this link](http://rohsdb.cmb.usc.edu/GBshape/cgi-bin/hgFileUi?db=hg19&g=wgEncodeMapability)). For SCOPE, the whole-genome mappability track on human hg19 assembly is stored as part of the package. Mappability for each target/bin is calculated in the same way as [CODEX2](https://github.com/yuchaojiang/CODEX2/blob/master/README.md#codex2-for-hg38). We further filter out bins with low mappability (mappability < 0.9) to reduce artifacts.
 ```{r Comment2, echo = FALSE}
 # Previous description: Compute the mean of mappability scores that overlapped reads map to bins, weighted by the width of mappability tracks on the genome reference. 
 ```
@@ -140,9 +121,7 @@ mapp <- getmapp(ref)
 head(mapp)
 ```
 
-
-## 1.4 SCOPE for hg38
-The whole-genome mappability track on human hg38 assembly is stored in SCOPE package. For more details on mappability calculation, please refer to [CODEX2 for hg38](https://github.com/yuchaojiang/CODEX2#codex2-for-hg38). 
+The whole-genome mappability track on human hg38 assembly is also stored in SCOPE package. For more details on mappability calculation, please refer to [CODEX2 for hg38](https://github.com/yuchaojiang/CODEX2/blob/master/README.md#codex2-for-hg38). 
 
 ```{r Comment4, echo = FALSE}
 # To calculate mappability for hg38, we download `hg19ToHg38.over.chain` from [this link](http://hgdownload.cse.ucsc.edu/goldenPath/hg19/liftOver/). This liftOver utility `hg19ToHg38.over.chain` contains the
@@ -161,7 +140,7 @@ mapp <- getmapp(ref, genome = BSgenome.Hsapiens.UCSC.hg38)
 head(mapp)
 ```
 
-Note that SCOPE can also be adapted to the mouse genome (mm10) in a similar way (see [CODEX2 for mouse genome](https://github.com/yuchaojiang/CODEX2#codex2-for-mouse-genome)).
+Note that SCOPE can also be adapted to the mouse genome (mm10) in a similar way (see [CODEX2 for mouse genome](https://github.com/yuchaojiang/CODEX2/blob/master/README.md#codex2-for-mouse-genome)). For unknown reference assembly without pre-calculated mappability track, refer to [CODEX2: mappability pre-calculation](https://github.com/yuchaojiang/CODEX2/blob/master/mouse/mapp.R). 
 
 
 # 2. Pre-computation and Quality Control
