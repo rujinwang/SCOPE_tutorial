@@ -296,4 +296,13 @@ segment_cs = segmentCBScs(Y = Y[which(seqnames(ref)==chri),],
 ```
 Shared breakpoints and integer copy-number profiles will be returned. 
 
+## 3.4 Visualization
+We demonstrate SCOPE on scDNA-seq data of two breast cancer patients (T10 and T16) from [Navin et al. 2011 Nature](https://www.nature.com/articles/nature09807). Figures below give heatmaps of genome-wide estimated integer copy numbers across all cells from T10 and T16. 
 
+```{r, out.width = "800px", include=TRUE, fig.align="center", echo=FALSE}
+knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Navin_et_al_heatmap_T10.png")
+```
+
+```{r, out.width = "800px", include=TRUE, fig.align="center", echo=FALSE}
+knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Navin_et_al_heatmap_T16.png")
+```
