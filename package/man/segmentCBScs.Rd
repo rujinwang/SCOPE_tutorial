@@ -4,7 +4,8 @@
 \alias{segmentCBScs}
 \title{Cross-sample segmentation}
 \usage{
-segmentCBScs(Y, Yhat, sampname, ref, lmax, mode, segment.CODEX2 = FALSE)
+segmentCBScs(Y, Yhat, sampname, ref, lmax, mode = "integer",
+  segment.CODEX2 = FALSE)
 }
 \arguments{
 \item{Y}{raw read depth matrix after quality control procedure}
@@ -17,8 +18,7 @@ segmentCBScs(Y, Yhat, sampname, ref, lmax, mode, segment.CODEX2 = FALSE)
 
 \item{lmax}{maximum CNV length in number of bins returned}
 
-\item{mode}{format of returned copy numbers, which can be either "integer" or "fraction".
-"integer" is recommended for scDNA-seq data.}
+\item{mode}{format of returned copy numbers. Only integer mode is supported for scDNA-seq data.}
 
 \item{segment.CODEX2}{logical, whether to perform individual segmentation. Default is \code{FALSE}.}
 }
@@ -29,6 +29,7 @@ A list with components
   \item{finalcall_CODEX2}{Final individual segmented callset of CNVs with genotyping results}
   \item{image.orig}{A matrix giving logarithm of normalized z-scores}
   \item{image.seg}{A matrix of logarithm of estimated copy number over 2}
+  \item{iCN}{A matrix of inferred integer copy number profiles}
 }
 \description{
 SCOPE offers a cross-sample Poisson likelihood-based recursive segmentation,
