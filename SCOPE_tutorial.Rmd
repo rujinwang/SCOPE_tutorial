@@ -289,14 +289,32 @@ knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Figure
 
 SCOPE provides the cross-sample segmentation, which outputs shared breakpoints across cells from the same clone. This step processes the entire genome chromosome by chromosome.
 ```{r, eval=FALSE}
-segment_cs = segmentCBScs(Y = Y[which(seqnames(ref)==chri),], 
-                          Yhat = Yhat.noK.EM[[1]][which(seqnames(ref)==chri),], 
-                          sampname = colnames(Y), ref = ref[which(seqnames(ref)==chri)], lmax = 30, 
-                          mode = "integer", QCmetric = QCmetric)
+segment_cs = vector('list',6)
+names(segment_cs) = c("poolcall", "finalcall", "finalcall_CODEX2", "image.orig", "image.seg", "iCN")
+for (chri in paste0("chr", 1:22)) {
+  message('\n', chri, '\n')
+  temp_segment_cs = segmentCBScs(Y = Y[which(seqnames(ref)==chri),], 
+                                 Yhat = Yhat[which(seqnames(ref)==chri),], 
+                                 sampname = colnames(Y), ref = ref[which(seqnames(ref)==chri)], lmax = 100)
+  temp_segment_cs$poolcall[,'st'] = temp_segment_cs$poolcall[,'st'] + min(which(seqnames(ref)==chri)) - 1
+  temp_segment_cs$poolcall[,'end'] = temp_segment_cs$poolcall[,'end'] + min(which(seqnames(ref)==chri)) - 1
+  temp_segment_cs$finalcall[,'st_bin'] = temp_segment_cs$finalcall[,'st_bin'] + min(which(seqnames(ref)==chri)) - 1
+  temp_segment_cs$finalcall[,'ed_bin'] = temp_segment_cs$finalcall[,'ed_bin'] + min(which(seqnames(ref)==chri)) - 1
+  
+  segment_cs = mapply(rbind, segment_cs, temp_segment_cs, SIMPLIFY=FALSE)
+}
+
+iCN = segment_cs$iCN
 ```
 Shared breakpoints and integer copy-number profiles will be returned. 
 
 ## 3.4 Visualization
+
+SCOPE offers heatmap of inferred integer copy-number profiles with cells clustered by hierarchical clustering.
+```{r, eval=FALSE}
+iCNplot(iCNmat = iCN, ref = ref, Gini = Gini, filename = "iCNplot")
+```
+
 We demonstrate SCOPE on scDNA-seq data of two breast cancer patients (T10 and T16) from [Navin et al. 2011 Nature](https://www.nature.com/articles/nature09807). Figures below give heatmaps of genome-wide estimated integer copy numbers across all cells from T10 and T16. 
 
 ```{r, out.width = "800px", include=TRUE, fig.align="center", echo=FALSE}
