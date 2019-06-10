@@ -53,7 +53,6 @@ getfGCj = function(gcfit.tempj, gctemp, Yj, offsetj, T, draw.plot = NULL, alphaj
     if(Ti==1){
       Z = matrix(nrow = length(gcfit.tempj), ncol = Ti, data = 1/Ti)
       vec_pi = 1
-      fGCi[fGCi <= 0] = temp
       loe.fit.temp = loess(gcfit.tempj[-bin.filter]~gctemp[-bin.filter])
       fGCi = predict(loe.fit.temp, newdata = gctemp, se = TRUE)$fit
       temp = min(fGCi[!is.na(fGCi) & fGCi>0])
@@ -86,6 +85,7 @@ getfGCj = function(gcfit.tempj, gctemp, Yj, offsetj, T, draw.plot = NULL, alphaj
         if(iter >=50) break
       }
     }
+
     if(Ti==1){
       loe.fit.plot = loess(gcfit.tempj~gctemp)
       fGCi.plot = loe.fit.plot$fitted
@@ -108,7 +108,6 @@ getfGCj = function(gcfit.tempj, gctemp, Yj, offsetj, T, draw.plot = NULL, alphaj
 
     if(draw.plot){
       smoothScatter(gctemp[-bin.filter],gcfit.tempj[-bin.filter], xlab = 'GC content', ylab = 'Y/beta/N/exp(gxh)',nrpoints  =  0, main = paste('T =',Ti))
-
       if(Ti == 1){
         points(gctemp[order(gctemp)], fGCi.plot[order(gctemp)], lty = 2, col = 2, type = 'l', lwd = 2)
         points(gctemp, gcfit.tempj, cex = 0.4, col = 2, pch = 16)
@@ -118,7 +117,6 @@ getfGCj = function(gcfit.tempj, gctemp, Yj, offsetj, T, draw.plot = NULL, alphaj
           points(gctemp[which((round(Z))[,k]==1)], (gcfit.tempj)[which((round(Z))[,k]==1)], cex = 0.4, col = k, pch = 16)
         }
       }
-
     }
 
     fGCi.obj[[which(T==Ti)]] = fGCi
