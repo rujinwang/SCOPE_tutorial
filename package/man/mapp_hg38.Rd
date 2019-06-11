@@ -6,22 +6,12 @@
 \title{GRanges with mappability scores for hg38}
 \format{A GRanges object with 21584930 ranges and 1 metadata column of mappability scores}
 \usage{
-data(mapp_hg38)
-}
-\value{
-GRanges object with mappabilities for hg38
+mapp_hg38
 }
 \description{
-GRanges object specifying target positions with mappabilities across the
- whole genome.
-}
-\details{
 Use liftOver utility to convert hg19 coordinates to hg38
 }
 \references{
-\url{http://hgdownload.cse.ucsc.edu/goldenPath/hg19/liftOver/}
-}
-\author{
-Rujin Wang \email{rujin@email.unc.edu}
+\url{http://rohsdb.cmb.usc.edu/GBshape/cgi-bin/hgFileUi?db=hg19&g=wgEncodeMapability}
 }
 \keyword{datasets}

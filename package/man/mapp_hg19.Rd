@@ -6,23 +6,13 @@
 \title{GRanges with mappability scores for hg19}
 \format{A GRanges object with 21591667 ranges and 1 metadata column of mappability scores}
 \usage{
-data(mapp_hg19)
-}
-\value{
-GRanges object with mappabilities for hg19
+mapp_hg19
 }
 \description{
-GRanges object specifying target positions with mappabilities across the
- whole genome.
-}
-\details{
 GRanges of mappability track for 100-mers on the GRCh37/hg19 human reference
  genome from ENCODE.
 }
 \references{
 \url{http://rohsdb.cmb.usc.edu/GBshape/cgi-bin/hgFileUi?db=hg19&g=wgEncodeMapability}
-}
-\author{
-Rujin Wang \email{rujin@email.unc.edu}
 }
 \keyword{datasets}
