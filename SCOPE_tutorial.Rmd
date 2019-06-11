@@ -200,7 +200,35 @@ mask.ref=sort(c(seg.dup, telo.centro))
 coverageObj <- getcoverage.scDNA(bambedObj, mapqthres = 40, mask.ref, seq='single-end') # Poorly mapped reads (MQ < 40) were filtered out using Samtools, according to Kim et al.
 Y <- coverageObj$Y
 
+# Post-coverage cell QC
+# remove samples whose library prep failed 
+lib.fail = which(apply(Y,2,sum)>0)
+QCmetric=QCmetric[lib.fail,]
+sampname=sampname[lib.fail]
+Y=Y[,lib.fail]
+# remove samples with low proportion of mapped reads
+filter=which(QCmetric$mapq20_prop<0.6)
+QCmetric=QCmetric[-filter,]
+sampname=sampname[-filter]
+Y=Y[,-filter]
+
 # We recommend removal of bins whose sum of read counts adjusted by library size are outside 3 MAD from the median. 
+# get library size factor N
+Y.nonzero <- Y[apply(Y, 1, function(x){!any(x==0)}),]
+pseudo.sample <- apply(Y.nonzero,1,function(x){exp(sum(log(x))/length(x))})
+N <- apply(apply(Y.nonzero, 2, function(x){x/pseudo.sample}), 2, median)
+Nmat <- matrix(nrow = nrow(Y), ncol = ncol(Y), data = N, byrow = TRUE)
+# Sum of read counts adjusted by N for each bin
+bin.sum=apply(Y/Nmat,1,sum)
+hist(bin.sum, 100, main = "Sum of read counts adjusted by N for each bin")
+# bin QC: 3 MAD from median
+abline(v=(median(bin.sum)-3*mad(bin.sum)), lty=2, col=2)
+abline(v=(median(bin.sum)+3*mad(bin.sum)), lty=2, col=2)
+Y=Y[(bin.sum>=(median(bin.sum)-3*mad(bin.sum))) & (bin.sum <=(median(bin.sum)+3*mad(bin.sum))),]
+ref=ref[(bin.sum>=(median(bin.sum)-3*mad(bin.sum))) & (bin.sum <=(median(bin.sum)+3*mad(bin.sum)))]
+gc = gc[(bin.sum>=(median(bin.sum)-3*mad(bin.sum))) & (bin.sum <=(median(bin.sum)+3*mad(bin.sum)))]
+Nmat = Nmat[(bin.sum>=(median(bin.sum)-3*mad(bin.sum))) & (bin.sum <=(median(bin.sum)+3*mad(bin.sum))),]
+
 ```
 
 
@@ -220,7 +248,7 @@ Gini = getGini(Y)
 
 Normal cell index is determined either by Gini coefficients or prior knowledge. The normalization procedure is embeded an Expectation-Maximization algorithm in the Poisson generalizaed linear model. The final selected optimal number of CNV group will be returned and then perform normalization. 
 ```{r, eval=FALSE}
-# Calculate library size
+# Re-calculate library size after cell/bin QC
 Y.nonzero <- Y[apply(Y, 1, function(x){!any(x==0)}),]
 pseudo.sample <- apply(Y.nonzero,1,function(x){exp(1/length(x)*sum(log(x)))})
 N <- apply(apply(Y.nonzero, 2, function(x){x/pseudo.sample}), 2, median)

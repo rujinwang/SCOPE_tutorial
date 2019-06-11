@@ -11,7 +11,7 @@
 
 <meta name="author" content="Rujin Wang, Danyu Lin, Yuchao Jiang" />
 
-<meta name="date" content="2019-04-29" />
+<meta name="date" content="2019-06-11" />
 
 <title>SCOPE: Single-cell Copy Number Estimation</title>
 
@@ -240,7 +240,7 @@ $(document).ready(function () {
 
 <h1 class="title toc-ignore">SCOPE: Single-cell Copy Number Estimation</h1>
 <h4 class="author">Rujin Wang, Danyu Lin, Yuchao Jiang</h4>
-<h4 class="date">2019-04-29</h4>
+<h4 class="date">2019-06-11</h4>
 
 </div>
 
@@ -418,7 +418,34 @@ mask.ref=<span class="kw">sort</span>(<span class="kw">c</span>(seg.dup, telo.ce
 coverageObj &lt;-<span class="st"> </span><span class="kw">getcoverage.scDNA</span>(bambedObj, <span class="dt">mapqthres =</span> <span class="dv">40</span>, mask.ref, <span class="dt">seq=</span><span class="st">'single-end'</span>) <span class="co"># Poorly mapped reads (MQ &lt; 40) were filtered out using Samtools, according to Kim et al.</span>
 Y &lt;-<span class="st"> </span>coverageObj<span class="op">$</span>Y
 
-<span class="co"># We recommend removal of bins whose sum of read counts adjusted by library size are outside 3 MAD from the median. </span></code></pre></div>
+<span class="co"># Post-coverage cell QC</span>
+<span class="co"># remove samples whose library prep failed </span>
+lib.fail =<span class="st"> </span><span class="kw">which</span>(<span class="kw">apply</span>(Y,<span class="dv">2</span>,sum)<span class="op">&gt;</span><span class="dv">0</span>)
+QCmetric=QCmetric[lib.fail,]
+sampname=sampname[lib.fail]
+Y=Y[,lib.fail]
+<span class="co"># remove samples with low proportion of mapped reads</span>
+filter=<span class="kw">which</span>(QCmetric<span class="op">$</span>mapq20_prop<span class="op">&lt;</span><span class="fl">0.6</span>)
+QCmetric=QCmetric[<span class="op">-</span>filter,]
+sampname=sampname[<span class="op">-</span>filter]
+Y=Y[,<span class="op">-</span>filter]
+
+<span class="co"># We recommend removal of bins whose sum of read counts adjusted by library size are outside 3 MAD from the median. </span>
+<span class="co"># get library size factor N</span>
+Y.nonzero &lt;-<span class="st"> </span>Y[<span class="kw">apply</span>(Y, <span class="dv">1</span>, <span class="cf">function</span>(x){<span class="op">!</span><span class="kw">any</span>(x<span class="op">==</span><span class="dv">0</span>)}),]
+pseudo.sample &lt;-<span class="st"> </span><span class="kw">apply</span>(Y.nonzero,<span class="dv">1</span>,<span class="cf">function</span>(x){<span class="kw">exp</span>(<span class="kw">sum</span>(<span class="kw">log</span>(x))<span class="op">/</span><span class="kw">length</span>(x))})
+N &lt;-<span class="st"> </span><span class="kw">apply</span>(<span class="kw">apply</span>(Y.nonzero, <span class="dv">2</span>, <span class="cf">function</span>(x){x<span class="op">/</span>pseudo.sample}), <span class="dv">2</span>, median)
+Nmat &lt;-<span class="st"> </span><span class="kw">matrix</span>(<span class="dt">nrow =</span> <span class="kw">nrow</span>(Y), <span class="dt">ncol =</span> <span class="kw">ncol</span>(Y), <span class="dt">data =</span> N, <span class="dt">byrow =</span> <span class="ot">TRUE</span>)
+<span class="co"># Sum of read counts adjusted by N for each bin</span>
+bin.sum=<span class="kw">apply</span>(Y<span class="op">/</span>Nmat,<span class="dv">1</span>,sum)
+<span class="kw">hist</span>(bin.sum, <span class="dv">100</span>, <span class="dt">main =</span> <span class="st">&quot;Sum of read counts adjusted by N for each bin&quot;</span>)
+<span class="co"># bin QC: 3 MAD from median</span>
+<span class="kw">abline</span>(<span class="dt">v=</span>(<span class="kw">median</span>(bin.sum)<span class="op">-</span><span class="dv">3</span><span class="op">*</span><span class="kw">mad</span>(bin.sum)), <span class="dt">lty=</span><span class="dv">2</span>, <span class="dt">col=</span><span class="dv">2</span>)
+<span class="kw">abline</span>(<span class="dt">v=</span>(<span class="kw">median</span>(bin.sum)<span class="op">+</span><span class="dv">3</span><span class="op">*</span><span class="kw">mad</span>(bin.sum)), <span class="dt">lty=</span><span class="dv">2</span>, <span class="dt">col=</span><span class="dv">2</span>)
+Y=Y[(bin.sum<span class="op">&gt;=</span>(<span class="kw">median</span>(bin.sum)<span class="op">-</span><span class="dv">3</span><span class="op">*</span><span class="kw">mad</span>(bin.sum))) <span class="op">&amp;</span><span class="st"> </span>(bin.sum <span class="op">&lt;=</span>(<span class="kw">median</span>(bin.sum)<span class="op">+</span><span class="dv">3</span><span class="op">*</span><span class="kw">mad</span>(bin.sum))),]
+ref=ref[(bin.sum<span class="op">&gt;=</span>(<span class="kw">median</span>(bin.sum)<span class="op">-</span><span class="dv">3</span><span class="op">*</span><span class="kw">mad</span>(bin.sum))) <span class="op">&amp;</span><span class="st"> </span>(bin.sum <span class="op">&lt;=</span>(<span class="kw">median</span>(bin.sum)<span class="op">+</span><span class="dv">3</span><span class="op">*</span><span class="kw">mad</span>(bin.sum)))]
+gc =<span class="st"> </span>gc[(bin.sum<span class="op">&gt;=</span>(<span class="kw">median</span>(bin.sum)<span class="op">-</span><span class="dv">3</span><span class="op">*</span><span class="kw">mad</span>(bin.sum))) <span class="op">&amp;</span><span class="st"> </span>(bin.sum <span class="op">&lt;=</span>(<span class="kw">median</span>(bin.sum)<span class="op">+</span><span class="dv">3</span><span class="op">*</span><span class="kw">mad</span>(bin.sum)))]
+Nmat =<span class="st"> </span>Nmat[(bin.sum<span class="op">&gt;=</span>(<span class="kw">median</span>(bin.sum)<span class="op">-</span><span class="dv">3</span><span class="op">*</span><span class="kw">mad</span>(bin.sum))) <span class="op">&amp;</span><span class="st"> </span>(bin.sum <span class="op">&lt;=</span>(<span class="kw">median</span>(bin.sum)<span class="op">+</span><span class="dv">3</span><span class="op">*</span><span class="kw">mad</span>(bin.sum))),]</code></pre></div>
 </div>
 </div>
 <div id="running-scope" class="section level1">
@@ -432,7 +459,7 @@ Gini =<span class="st"> </span><span class="kw">getGini</span>(Y)</code></pre></
 <div id="running-scope-with-negative-control-samples" class="section level2">
 <h2>3.2 Running SCOPE with negative control samples</h2>
 <p>Normal cell index is determined either by Gini coefficients or prior knowledge. The normalization procedure is embeded an Expectation-Maximization algorithm in the Poisson generalizaed linear model. The final selected optimal number of CNV group will be returned and then perform normalization.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Calculate library size</span>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Re-calculate library size after cell/bin QC</span>
 Y.nonzero &lt;-<span class="st"> </span>Y[<span class="kw">apply</span>(Y, <span class="dv">1</span>, <span class="cf">function</span>(x){<span class="op">!</span><span class="kw">any</span>(x<span class="op">==</span><span class="dv">0</span>)}),]
 pseudo.sample &lt;-<span class="st"> </span><span class="kw">apply</span>(Y.nonzero,<span class="dv">1</span>,<span class="cf">function</span>(x){<span class="kw">exp</span>(<span class="dv">1</span><span class="op">/</span><span class="kw">length</span>(x)<span class="op">*</span><span class="kw">sum</span>(<span class="kw">log</span>(x)))})
 N &lt;-<span class="st"> </span><span class="kw">apply</span>(<span class="kw">apply</span>(Y.nonzero, <span class="dv">2</span>, <span class="cf">function</span>(x){x<span class="op">/</span>pseudo.sample}), <span class="dv">2</span>, median)
