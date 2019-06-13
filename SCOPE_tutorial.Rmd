@@ -179,6 +179,8 @@ ref = ref[ref$gc>20 & ref$gc<80]
 low.mapp = which(mapp < 0.9)
 ref = ref[-low.mapp]
 
+seqlevels(ref) = paste0("chr", 1:22)
+ref = sort(ref)
 bambedObj$ref = ref
 ```
 
@@ -202,15 +204,15 @@ Y <- coverageObj$Y
 
 # Post-coverage cell QC
 # remove samples whose library prep failed 
-lib.fail = which(apply(Y,2,sum)>0)
-QCmetric=QCmetric[lib.fail,]
-sampname=sampname[lib.fail]
-Y=Y[,lib.fail]
+lib.nofail = which(apply(Y,2,sum)>0)
+QCmetric=QCmetric[lib.nofail,]
+sampname=sampname[lib.nofail]
+Y=Y[,lib.nofail]
 # remove samples with low proportion of mapped reads
-filter=which(QCmetric$mapq20_prop<0.6)
-QCmetric=QCmetric[-filter,]
-sampname=sampname[-filter]
-Y=Y[,-filter]
+filter = which(QCmetric[,'mapq20_prop']>=0.6)
+QCmetric = QCmetric[filter,]
+sampname = sampname[filter]
+Y=Y[,filter]
 
 # We recommend removal of bins whose sum of read counts adjusted by library size are outside 3 MAD from the median. 
 # get library size factor N

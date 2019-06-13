@@ -11,7 +11,7 @@
 
 <meta name="author" content="Rujin Wang, Danyu Lin, Yuchao Jiang" />
 
-<meta name="date" content="2019-06-11" />
+<meta name="date" content="2019-06-12" />
 
 <title>SCOPE: Single-cell Copy Number Estimation</title>
 
@@ -240,7 +240,7 @@ $(document).ready(function () {
 
 <h1 class="title toc-ignore">SCOPE: Single-cell Copy Number Estimation</h1>
 <h4 class="author">Rujin Wang, Danyu Lin, Yuchao Jiang</h4>
-<h4 class="date">2019-06-11</h4>
+<h4 class="date">2019-06-12</h4>
 
 </div>
 
@@ -398,6 +398,8 @@ ref =<span class="st"> </span>ref[ref<span class="op">$</span>gc<span class="op"
 low.mapp =<span class="st"> </span><span class="kw">which</span>(mapp <span class="op">&lt;</span><span class="st"> </span><span class="fl">0.9</span>)
 ref =<span class="st"> </span>ref[<span class="op">-</span>low.mapp]
 
+<span class="kw">seqlevels</span>(ref) =<span class="st"> </span><span class="kw">paste0</span>(<span class="st">&quot;chr&quot;</span>, <span class="dv">1</span><span class="op">:</span><span class="dv">22</span>)
+ref =<span class="st"> </span><span class="kw">sort</span>(ref)
 bambedObj<span class="op">$</span>ref =<span class="st"> </span>ref</code></pre></div>
 </div>
 <div id="getting-coverage" class="section level2">
@@ -420,15 +422,15 @@ Y &lt;-<span class="st"> </span>coverageObj<span class="op">$</span>Y
 
 <span class="co"># Post-coverage cell QC</span>
 <span class="co"># remove samples whose library prep failed </span>
-lib.fail =<span class="st"> </span><span class="kw">which</span>(<span class="kw">apply</span>(Y,<span class="dv">2</span>,sum)<span class="op">&gt;</span><span class="dv">0</span>)
-QCmetric=QCmetric[lib.fail,]
-sampname=sampname[lib.fail]
-Y=Y[,lib.fail]
+lib.nofail =<span class="st"> </span><span class="kw">which</span>(<span class="kw">apply</span>(Y,<span class="dv">2</span>,sum)<span class="op">&gt;</span><span class="dv">0</span>)
+QCmetric=QCmetric[lib.nofail,]
+sampname=sampname[lib.nofail]
+Y=Y[,lib.nofail]
 <span class="co"># remove samples with low proportion of mapped reads</span>
-filter=<span class="kw">which</span>(QCmetric<span class="op">$</span>mapq20_prop<span class="op">&lt;</span><span class="fl">0.6</span>)
-QCmetric=QCmetric[<span class="op">-</span>filter,]
-sampname=sampname[<span class="op">-</span>filter]
-Y=Y[,<span class="op">-</span>filter]
+filter =<span class="st"> </span><span class="kw">which</span>(QCmetric[,<span class="st">'mapq20_prop'</span>]<span class="op">&gt;=</span><span class="fl">0.6</span>)
+QCmetric =<span class="st"> </span>QCmetric[filter,]
+sampname =<span class="st"> </span>sampname[filter]
+Y=Y[,filter]
 
 <span class="co"># We recommend removal of bins whose sum of read counts adjusted by library size are outside 3 MAD from the median. </span>
 <span class="co"># get library size factor N</span>

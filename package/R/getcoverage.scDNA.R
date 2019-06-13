@@ -58,7 +58,8 @@ getcoverage.scDNA=function (bambedObj, mapqthres, mask.ref, seq)
 		  # # only keep reads from chr1 to chr22 plus chrX chrY
 		  # bam.ref=bam.ref[!is.na(match(seqnames(bam.ref),paste('chr',c(1:22, 'X', 'Y'),sep=''))),]
 		  # remove reads mapped to masked regions
-		  bam.ref=bam.ref[countOverlaps(bam.ref, mask.ref)==0]
+		  # bam.ref=bam.ref[countOverlaps(bam.ref, mask.ref)==0]
+		  bam.ref = suppressWarnings(bam.ref[countOverlaps(bam.ref, mask.ref)==0])
 		  Y[, i] <- countOverlaps(ref, bam.ref)
 		}
 	}
