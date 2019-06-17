@@ -89,7 +89,7 @@ iCNplot = function(iCNmat, ref, Gini, annotation = NULL, plot.dendrogram = TRUE,
 
   chr.pos = rep(NA, length(unique(seqnames(ref))))
   for (chri in 1:22){
-    chr.pos[chri] = length(ref[which(seqnames(ref)==paste0("chr", chri))])
+    chr.pos[chri] = length(ref[which(as.character(seqnames(ref))==paste0("chr", chri))])
   }
   chr.pos = cumsum(chr.pos)
   xpos=round(c(0,chr.pos[1:21])+(chr.pos-c(0,chr.pos[1:21]))/2)
@@ -131,10 +131,10 @@ iCNplot = function(iCNmat, ref, Gini, annotation = NULL, plot.dendrogram = TRUE,
   anno.chrom = NULL
   for (i in 1:22) {
     if(i%%2==1){
-      temp = matrix(rep(1, length(which(seqnames(ref)==paste0("chr", i)))), nrow = 1) # odd chromosome
+      temp = matrix(rep(1, length(which(as.character(seqnames(ref))==paste0("chr", i)))), nrow = 1) # odd chromosome
       anno.chrom = cbind(anno.chrom, temp)
     } else{
-      temp = matrix(rep(2, length(which(seqnames(ref)==paste0("chr", i)))), nrow = 1) # even chromosome
+      temp = matrix(rep(2, length(which(as.character(seqnames(ref))==paste0("chr", i)))), nrow = 1) # even chromosome
       anno.chrom = cbind(anno.chrom, temp)
     }
   }

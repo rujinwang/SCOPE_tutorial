@@ -59,6 +59,7 @@ segmentCBScs = function(Y, Yhat, sampname, ref, mode = "integer", segment.idv = 
         if(msgprint){
           message("Calculating scan statistic for sample ", sampno, ": ", sampname[sampno], ".")
         }
+
         y = Y[, sampno]
         yhat = Yhat[, sampno]
 
@@ -572,8 +573,8 @@ segmentCBScs = function(Y, Yhat, sampname, ref, mode = "integer", segment.idv = 
   for (i in 1:nrow(poolcall)) {
     st_bin = poolcall[i,"st"]
     ed_bin = poolcall[i,"end"]
-    st_bp <- start(ref)[as.numeric(poolcall[i,"st"])]
-    ed_bp <- end(ref)[as.numeric(poolcall[i,"end"])]
+    # st_bp <- start(ref)[as.numeric(poolcall[i,"st"])]
+    # ed_bp <- end(ref)[as.numeric(poolcall[i,"end"])]
 
     yact.ind = colSums(Y[st_bin:ed_bin, ,drop = F])
     lambda.ind = colSums(Yhat[st_bin:ed_bin, ,drop = F])
@@ -589,20 +590,22 @@ segmentCBScs = function(Y, Yhat, sampname, ref, mode = "integer", segment.idv = 
     iCN[poolcall[i,1]:poolcall[i,2], ] = matrix(nrow = (poolcall[i,2] - poolcall[i,1] + 1),
                                                 ncol = ncol(iCN), data = chat.ind, byrow = TRUE)
 
-    temp = cbind(colnames(Y), rep(st_bin, ncol(Y)), rep(ed_bin, ncol(Y)), rep(st_bp, ncol(Y)),
-                 rep(ed_bp, ncol(Y)), chat.ind)
+    # temp = cbind(colnames(Y), rep(st_bin, ncol(Y)), rep(ed_bin, ncol(Y)), rep(st_bp, ncol(Y)),
+    #              rep(ed_bp, ncol(Y)), chat.ind)
+    temp = cbind(colnames(Y), rep(st_bin, ncol(Y)), rep(ed_bin, ncol(Y)), chat.ind)
     temp = temp[chat.ind != 2, ]
     finalcall = rbind(finalcall, temp)
     rownames(finalcall) = NULL
-    colnames(finalcall) = c("sample_name", "st_bin", "ed_bin", "st_bp", "ed_bp", "cnv_no")
+    # colnames(finalcall) = c("sample_name", "st_bin", "ed_bin", "st_bp", "ed_bp", "cnv_no")
+    colnames(finalcall) = c("sample_name", "st_bin", "ed_bin", "cnv_no")
   }
 
   finalcall = as.data.frame(finalcall)
 
   finalcall$st_bin = as.numeric(paste(finalcall$st_bin))
   finalcall$ed_bin = as.numeric(paste(finalcall$ed_bin))
-  finalcall$st_bp = as.numeric(paste(finalcall$st_bp))
-  finalcall$ed_bp = as.numeric(paste(finalcall$ed_bp))
+  # finalcall$st_bp = as.numeric(paste(finalcall$st_bp))
+  # finalcall$ed_bp = as.numeric(paste(finalcall$ed_bp))
   finalcall$cnv_no = as.numeric(paste(finalcall$cnv_no))
 
 
