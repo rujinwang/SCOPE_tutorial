@@ -103,7 +103,31 @@ samtools view -bS "$barcode"-1.header.sam > "$barcode".bam
 # Follow the same Sort, Add read group, and Dedup procedure as previously described. 
 ```
 
-## 1.3 Mappability
+
+# 2. Pre-computation and Quality Control
+## 2.1 Pre-preparation
+This step is to generate the whole-genome sequencing `.bed` file. We construct the fixed-length genomic interval using the beginning and end mapping position of each chromosome from the Whole-exome sequencing target `.bed` file of 1000 Genome Project Data. Make sure that all chromosomes are named consistently and be concordant with `.bam` files. SCOPE processes the entire genome altogether. Use function `getbambed()` to finish the pre-preparation step. 
+```{r, eval=FALSE}
+library(CODEX2)
+# Pre-processing
+bedFile <- file.path('/path/to/BED',"scWGA500kb.bed")
+bamfolder = '/path/to/BAM'
+bamFile <- list.files(bamfolder, pattern = '*.dedup.bam$')
+bamdir <- file.path(bamfolder, bamFile)
+sampname = substring(bamFile, 1, 10)
+bambedObj <- getbambed(bamdir = bamdir, bedFile = bedFile,
+                      sampname = sampname, projectname = "Kim")
+bamdir <- bambedObj$bamdir; sampname <- bambedObj$sampname
+ref <- bambedObj$ref; projectname <- bambedObj$projectname
+```
+
+## 2.2 Getting GC content and mappability
+Compute GC content and mappability(see above) for each bin. 
+```{r, eval=FALSE}
+gc <- getgc(ref)
+values(ref) <- cbind(values(ref), DataFrame(gc))
+```
+
 By default, SCOPE is intended for hg19 reference genome. Note that scDNA sequencing is whole-genome amplification and the mappability score is essential to determine variable binning method. To compute mappability in hg19, we download mappability tracks for 100-mers on the GRCh37/hg19 human reference genome from ENCODE ( `wgEncodeCrgMapabilityAlign100mer.bigwig` from [this link](http://rohsdb.cmb.usc.edu/GBshape/cgi-bin/hgFileUi?db=hg19&g=wgEncodeMapability)). For SCOPE, the whole-genome mappability track on human hg19 assembly is stored as part of the package. Mappability for each target/bin is calculated in the same way as [CODEX2](https://github.com/yuchaojiang/CODEX2/blob/master/README.md). We further filter out bins with low mappability (mappability < 0.9) to reduce artifacts.
 ```{r Comment2, echo = FALSE}
 # Previous description: Compute the mean of mappability scores that overlapped reads map to bins, weighted by the width of mappability tracks on the genome reference. 
@@ -141,30 +165,6 @@ head(mapp)
 ```
 
 Note that SCOPE can also be adapted to the mouse genome (mm10) in a similar way (see [CODEX2 for mouse genome](https://github.com/yuchaojiang/CODEX2/blob/master/README.md)). For unknown reference assembly without pre-calculated mappability track, refer to [CODEX2: mappability pre-calculation](https://github.com/yuchaojiang/CODEX2/blob/master/mouse/mapp.R).
-
-# 2. Pre-computation and Quality Control
-## 2.1 Pre-preparation
-This step is to generate the whole-genome sequencing `.bed` file. We construct the fixed-length genomic interval using the beginning and end mapping position of each chromosome from the Whole-exome sequencing target `.bed` file of 1000 Genome Project Data. Make sure that all chromosomes are named consistently and be concordant with `.bam` files. SCOPE processes the entire genome altogether. Use function `getbambed()` to finish the pre-preparation step. 
-```{r, eval=FALSE}
-library(CODEX2)
-# Pre-processing
-bedFile <- file.path('/path/to/BED',"scWGA500kb.bed")
-bamfolder = '/path/to/BAM'
-bamFile <- list.files(bamfolder, pattern = '*.dedup.bam$')
-bamdir <- file.path(bamfolder, bamFile)
-sampname = substring(bamFile, 1, 10)
-bambedObj <- getbambed(bamdir = bamdir, bedFile = bedFile,
-                      sampname = sampname, projectname = "Kim")
-bamdir <- bambedObj$bamdir; sampname <- bambedObj$sampname
-ref <- bambedObj$ref; projectname <- bambedObj$projectname
-```
-
-## 2.2 Getting GC content and mappability
-Compute GC content and mappability(see above) for each bin. 
-```{r, eval=FALSE}
-gc <- getgc(ref)
-values(ref) <- cbind(values(ref), DataFrame(gc))
-```
 
 ## 2.3 Quality control
 `getsampQC()` is used to perform QC step on single cells, where total number/proportion of reads, total number/proportion of mapped reads, total number/proportion of mapped non-duplicate reads, and number/proportion of reads with mapping quality greater than 20 will be returned. Remove samples/cells with low proportion of mapped reads. Filter out bins that have extreme GC content (less than 20% and greater than 80%) and low mappability (less than 0.9). 
