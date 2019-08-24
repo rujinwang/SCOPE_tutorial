@@ -28,7 +28,7 @@ choice of optimal CNV group. Default is \code{NULL}}
 
 \item{alphaj}{a vector giving values of adjusted/absolute copy number value for cell \emph{j}}
 
-\item{minCountQC}{the minimum read coverage required for EM fitting}
+\item{minCountQC}{the minimum read coverage required for EM fitting. Defalut is \code{20}}
 }
 \value{
 A list with components

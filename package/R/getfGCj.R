@@ -18,7 +18,7 @@
 #' @param draw.plot logical, whether to plot GC content bias fitting results using EM and the
 #'  choice of optimal CNV group. Default is \code{NULL}
 #' @param alphaj a vector giving values of adjusted/absolute copy number value for cell \emph{j}
-#' @param minCountQC the minimum read coverage required for EM fitting
+#' @param minCountQC the minimum read coverage required for EM fitting. Defalut is \code{20}
 #'
 #' @return A list with components
 #'   \item{fGCi.obj}{A list with EM estimated vector of GC content bias fitting}

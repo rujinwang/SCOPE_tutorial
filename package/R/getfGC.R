@@ -17,7 +17,7 @@
 #'  deletion and a group of null region. The rest groups are representative of different duplication
 #'  states.
 #' @param alpha adjusted/absolute copy number matrix across all cells
-#' @param minCountQC the minimum read coverage required for EM fitting
+#' @param minCountQC the minimum read coverage required for EM fitting. Defalut is \code{20}
 #'
 #' @return A list with components
 #'   \item{fGC.hat}{EM estimated GC content bias matrix given optimal CNV group selection}

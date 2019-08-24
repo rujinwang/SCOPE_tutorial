@@ -29,7 +29,7 @@ states.}
 
 \item{beta0}{a vector of initialized bin-specific biases returned from CODEX2 without latent factors}
 
-\item{minCountQC}{the minimum read coverage required for normalization and EM fitting}
+\item{minCountQC}{the minimum read coverage required for normalization and EM fitting. Defalut is \code{20}}
 }
 \value{
 A list with components

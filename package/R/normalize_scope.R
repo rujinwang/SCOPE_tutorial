@@ -18,7 +18,7 @@
 #'  states.
 #' @param alpha0 initialized matrix of absolute copy number
 #' @param beta0 a vector of initialized bin-specific biases returned from CODEX2 without latent factors
-#' @param minCountQC the minimum read coverage required for normalization and EM fitting
+#' @param minCountQC the minimum read coverage required for normalization and EM fitting. Defalut is \code{20}
 #'
 #' @return A list with components
 #'   \item{Yhat}{A list of normalized read depth matrix with EM}
