@@ -240,8 +240,9 @@ Nmat = Nmat[(bin.sum>=(median(bin.sum)-3*mad(bin.sum))) & (bin.sum <=(median(bin
 ```
 
 ## 3.1 Gini coefficient
-One feature of SCOPE is to identify normal/diploid cells using Gini index. Gini coefficient is calculated for each cell as 2 times the area between the Lorenz curve and the diagonal. The value of the Gini index varies between 0 and 1, where 0 is the most uniform and 1 is the most extreme. Cells with extremely high Gini coefficients(greater than 0.5) are recommended to be excluded. Set up a Gini threshold for identification of diploid/normal cells (for example, Gini less than 0.12). 
+One feature of SCOPE is to identify normal/diploid cells using Gini index. Gini coefficient is calculated for each cell as 2 times the area between the Lorenz curve and the diagonal. The value of the Gini index varies between 0 and 1, where 0 is the most uniform and 1 is the most extreme. Cells with extremely high Gini coefficients(greater than 0.5) are recommended to be excluded. Set up a Gini threshold for identification of diploid/normal cells (for example, Gini less than 0.12). We demonstrate the pre-stored toy dataset as follows. 
 ```{r, eval=FALSE}
+# Load pre-stored toy data. 
 # get gini coefficient for each cell
 Gini = getGini(Y)
 ```
@@ -268,15 +269,8 @@ Yhat.noK=normObj$Yhat[[1]]
 beta.hat.noK=normObj$beta.hat[[1]]
 
 # Pre-estimate of ploidy
-ploidy = rep(NA, ncol(Y))
-for(j in 1:ncol(Y)){
-  cat(j,'\t')
-  RCNP = Y[,j]/Yhat.noK[,j]
-  cploidy = seq(1.5, 6, 0.05)
-  SCNP = matrix(nrow = length(RCNP), ncol = length(cploidy), data = RCNP) * matrix(nrow = length(RCNP), ncol = length(cploidy), data = cploidy, byrow = T)
-  sos = apply((round(SCNP)-SCNP), 2, function(x){sum(x^2)})
-  ploidy[j] = cploidy[which.min(sos)]
-}
+ploidy =  PreEst_ploidy(Y = Y, Yhat = Yhat.noK, ref = ref)
+ploidy
 
 # Get initialization
 betahat=beta.hat.noK
@@ -288,6 +282,7 @@ for(j in 1:ncol(alpha0)){
   gcfit.null=loe.fit$fitted/(ploidy[j]/2)
   alpha0[,j] = gcfit.temp[,j]/gcfit.null*2
 }
+offset=Nmat*matrix(nrow = nrow(Y), ncol = ncol(Y), data = betahat, byrow = FALSE)
 
 normObj_scope=normalize_scope(Y_qc = Y, 
                               gc_qc = ref$gc, 
@@ -302,7 +297,27 @@ alpha = normObj_scope$alpha.hat[[which.max(normObj_scope$BIC)]]
 ```
 
 Visualize selection results for _j_-th cell. By default, BIC is used to choose optimal CNV group. 
+```{r, eval=FALSE}
+choiceofT(Y = Y, gcfit.temp = gcfit.temp, gctemp = ref$gc, 
+          norm_index = which(Gini<=0.12), offset = offset, T = 1:7, alpha = alpha0, 
+          filename = paste0("choiceofTdemo.pdf"))
+```
+
+
 ```{r, echo=FALSE, eval=FALSE}
+# Pre-estimate of ploidy
+ploidy = rep(NA, ncol(Y))
+for(j in 1:ncol(Y)){
+cat(j,'\t')
+RCNP = Y[,j]/Yhat.noK[,j]
+cploidy = seq(1.5, 6, 0.05)
+SCNP = matrix(nrow = length(RCNP), ncol = length(cploidy), data = RCNP) * matrix(nrow = length(RCN
+P), ncol = length(cploidy), data = cploidy, byrow = T)
+sos = apply((round(SCNP)-SCNP), 2, function(x){sum(x^2)})
+ploidy[j] = cploidy[which.min(sos)]
+}
+
+
 Yj = Y[,j]
 Nj = Nmat[1,j]
 betatemp = beta.hat.noK[[1]]
@@ -312,7 +327,8 @@ Pois.obj[[j]] = multi_run.Pois(gcfitj = gcfitj, gctemp = gctemp, Yj=Yj, Nj=Nj, b
 ```
 
 ```{r, out.width = "500px", include=TRUE, fig.align="center", echo=FALSE}
-knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Figure2_EM_fitting.png")
+# knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Figure2_EM_fitting.png")
+knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/demo_EM_fitting.png")
 ```
 
 ## 3.3 Cross-sample segmentation by SCOPE
