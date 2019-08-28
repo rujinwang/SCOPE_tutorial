@@ -14,6 +14,9 @@
 #'
 #' @author Rujin Wang \email{rujin@email.unc.edu}
 #' @importFrom DNAcopy CNA smooth.CNA segment
+#' @importFrom GenomeInfoDb seqnames
+#' @importFrom BSgenome start
+#' @importFrom IRanges end
 #' @export
 PreEst_ploidy = function(Y, Yhat, ref, maxPloidy = 6, minPloidy = 1.5, minBinWidth = 5){
 	ploidy.SoS=rep(NA, ncol(Y))
