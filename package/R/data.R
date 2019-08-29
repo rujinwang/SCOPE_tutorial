@@ -17,3 +17,15 @@
 #'
 #' @references \url{http://rohsdb.cmb.usc.edu/GBshape/cgi-bin/hgFileUi?db=hg19&g=wgEncodeMapability}
 "mapp_hg38"
+
+
+#' A read count matrix in the toy dataset
+#'
+#' @format A read count matrix with 1544 bins and 39 cells
+"Y_sim"
+
+
+#' A reference genome in the toy dataset
+#'
+#' @format A GRanges object with 1544 bins and 1 metadata column of GC content
+"ref_sim"

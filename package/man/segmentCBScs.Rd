@@ -4,8 +4,7 @@
 \alias{segmentCBScs}
 \title{Cross-sample segmentation}
 \usage{
-segmentCBScs(Y, Yhat, sampname, ref, mode = "integer",
-  segment.idv = FALSE, max.ns = 0)
+segmentCBScs(Y, Yhat, sampname, ref, chr, mode = "integer", max.ns = 0)
 }
 \arguments{
 \item{Y}{raw read depth matrix after quality control procedure}
@@ -16,9 +15,9 @@ segmentCBScs(Y, Yhat, sampname, ref, mode = "integer",
 
 \item{ref}{GRanges object after quality control procedure}
 
-\item{mode}{format of returned copy numbers. Only integer mode is supported for scDNA-seq data.}
+\item{chr}{chromosome name. Make sure it is consistent with the reference genome.}
 
-\item{segment.idv}{logical, whether to perform individual segmentation. Default is \code{FALSE}.}
+\item{mode}{format of returned copy numbers. Only integer mode is supported for scDNA-seq data.}
 
 \item{max.ns}{a number specifying how many rounds of nested structure searching would be performed. Defalut is \code{0}.}
 }
@@ -26,11 +25,9 @@ segmentCBScs(Y, Yhat, sampname, ref, mode = "integer",
 A list with components
   \item{poolcall}{Cross-sample CNV callings indicating shared breakpoints}
   \item{finalcall}{Final cross-sample segmented callset of CNVs with genotyping results}
-  \item{finalcall.idv}{Final individual segmented callset of CNVs with genotyping results}
   \item{image.orig}{A matrix giving logarithm of normalized z-scores}
   \item{image.seg}{A matrix of logarithm of estimated copy number over 2}
   \item{iCN}{A matrix of inferred integer copy number profiles}
-  \item{iCN.idv}{A matrix of inferred integer copy number profiles by individual segmentation}
 }
 \description{
 SCOPE offers a cross-sample Poisson likelihood-based recursive segmentation,

@@ -13,20 +13,17 @@ output:
 ## 1.1 Introduction
 SCOPE is a statistical framework designed for calling copy number variants (CNVs) from whole-genome single-cell DNA sequencing read depths. The distinguishing features of SCOPE include: 
 
-1. Utilizes cell-specific Gini coefficients for quality controls and for identification of normal/diploid cells
+1. Utilizes cell-specific Gini coefficients for quality controls and for identification of normal/diploid cells. In most single-cell cancer genomics studies, diploid cells are inevitably picked up from adjacent normal tissues for sequencing and can thus serve as normal controls for read depth normalization. However, not all platforms/experiments allow or adopt flow-sorting based techniques before scDNA-seq and thus cell ploidy and case-control labeling are not always readily available. Gini coefficient is able to index diploid cells out of the entire cell populations and serves as good proxies to identify cell outliers. 
 
-2. Employs an EM algorithm to model GC content bias, which accounts for the different copy number states along the genome
+2. Employs an EM algorithm to model GC content bias, which accounts for the different copy number states along the genome. SCOPE is based on a Poisson latent factor model for cross-sample normalization, borrowing information both across regions and across samples to estimate the bias terms. 
 
 3. Incorporates multi-sample segmentation procedure to identify breakpoints that are shared across cells from the same genetic background
 
 ```{r, out.width = "200px", fig.align = "center", echo=FALSE}
-# knitr::include_graphics("/Users/rujin/writing/SCOPE_Git//Figures/Figure1_outline.JPG")
-knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Figure1_SCOPE_outline.jpg")
+knitr::include_graphics("/Users/rujin/Dropbox/writing/SCOPE_Git//Figures/Figure1_SCOPE_outline.jpg")
+# knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Figure1_SCOPE_outline.jpg")
 ```
 
-```{r Comment1, echo = FALSE}
-# Comments: this flowchart needs modifying! Demultiplexing step is performed on integrated bams, not sequencing fastqs
-```
 **Figure 1**. A flowchart outlining the procedures for profiling single-cell CNV. The first step is bioinformatic pre-processing pipeline. Assembled BAM files are finally required. The second step is calculation of GC content, mappability and read depth using Rsamtools with QC measurements. An EM embedded normalization procedure is then applied to single cells to remove biases and artifacts along the whole genome. The cross-sample Poisson likelihood segmentation is performed to call CNVs, which can be further used to infer single-cell clusters or clones.
 
 
@@ -37,14 +34,10 @@ There are two types of scDNA-seq data sources: public data from NCBI Sequence Re
 ```{bash, eval = FALSE}
 ##############################################################################################
 # public data from NCBI Sequence Read Archive
-SRR=SRR5964215
+SRR=SRRXXXXXXX
 kim=/pine/scr/r/u/rujin/Kim_Navin_et_al_Cell_2018
-sra_dir=$kim/sra
 fastq_dir=$kim/fastq
 align_dir=$kim/align
-
-# Fastq-dump to obtain FASTQ files
-fastq-dump.2.9.0 -I -O $fastq_dir --split-files $sra_dir/$SRR.sra
 
 # Align FASTQ sequences to NCBI hg19 reference genome (Single-end sequenced cells have only 1 FASTQ file; paired-end sequencing would generate two FASTQ files, with suffix "_1" and "_2")
 cd $fastq_dir
@@ -79,7 +72,6 @@ java -jar /proj/yuchaojlab/bin/picard.jar BuildBamIndex I="$SRR".sorted.rg.dedup
 # 10X Genomics
 XGenomics=/pine/scr/r/u/rujin/10XGenomics
 dataset=breast_tissue_A_2k
-fastq_dir=$XGenomics/$dataset/fastq
 output_dir=$XGenomics/$dataset/output
 align_dir=$XGenomics/$dataset/align
 
@@ -96,278 +88,180 @@ cat header.txt $align_dir/$barcode/$barcode-1.sam > $align_dir/$barcode/$barcode
 # Convert .sam to .bam
 cd $align_dir/$barcode
 samtools view -bS "$barcode"-1.header.sam > "$barcode".bam
-
-# Sort
-# Add read group
-# Dedup
-# Follow the same Sort, Add read group, and Dedup procedure as previously described. 
 ```
 
 
 # 2. Pre-computation and Quality Control
 ## 2.1 Pre-preparation
-This step is to generate the whole-genome sequencing `.bed` file. We construct the fixed-length genomic interval using the beginning and end mapping position of each chromosome from the Whole-exome sequencing target `.bed` file of 1000 Genome Project Data. Make sure that all chromosomes are named consistently and be concordant with `.bam` files. SCOPE processes the entire genome altogether. Use function `getbambed()` to finish the pre-preparation step. 
+SCOPE provides a pre-stored whole-genome sequencing `.bed` file, with a fixed 500kb genomic interval length. SCOPE enables reconstruction of user-defined genome-wide consecutive bins prior to downstream analysis. Make sure that all chromosomes are named consistently and be concordant with `.bam` files. SCOPE processes the entire genome altogether. Use function `getbambed_scope()` to finish the pre-preparation step. 
 ```{r, eval=FALSE}
-library(CODEX2)
-# Pre-processing
-bedFile <- file.path('/path/to/BED',"scWGA500kb.bed")
-bamfolder = '/path/to/BAM'
+library(SCOPE)
+bedFile <- system.file("extdata", "scWGA500kbsort.bed", package = "SCOPE")
+bamfolder <- "/pine/scr/r/u/rujin/Navin_et_al_Nature_2011/align/"
 bamFile <- list.files(bamfolder, pattern = '*.dedup.bam$')
 bamdir <- file.path(bamfolder, bamFile)
-sampname = substring(bamFile, 1, 10)
-bambedObj <- getbambed(bamdir = bamdir, bedFile = bedFile,
-                      sampname = sampname, projectname = "Kim")
-bamdir <- bambedObj$bamdir; sampname <- bambedObj$sampname
-ref <- bambedObj$ref; projectname <- bambedObj$projectname
+sampname_raw = sapply(strsplit(bamFile, ".", fixed = TRUE), "[", 1)
+bambedObj <- getbambed_scope(bamdir = bamdir, bedFile = bedFile, sampname = sampname_raw)
+bamdir <- bambedObj$bamdir
+sampname_raw <- bambedObj$sampname
+ref_raw <- bambedObj$ref
 ```
 
 ## 2.2 Getting GC content and mappability
-Compute GC content and mappability(see above) for each bin. 
+Compute GC content and mappability for each bin. By default, SCOPE is intended for hg19 reference genome. To compute mappability for hg19, we employed the 100-mers mappability track from the ENCODE Project( `wgEncodeCrgMapabilityAlign100mer.bigwig` from [link](http://rohsdb.cmb.usc.edu/GBshape/cgi-bin/hgFileUi?db=hg19&g=wgEncodeMapability)) and computed weighted average of the mappability scores if multiple ENCODE regions overlap with the same bin. For SCOPE, the whole-genome mappability track on human hg19 assembly is stored as part of the package. 
 ```{r, eval=FALSE}
-gc <- getgc(ref)
-values(ref) <- cbind(values(ref), DataFrame(gc))
+library(CODEX2)
+gc <- getgc(ref_raw, genome = BSgenome.Hsapiens.UCSC.hg19)
+mapp <- getmapp(ref_raw, genome = BSgenome.Hsapiens.UCSC.hg19)
+values(ref_raw) <- cbind(values(ref_raw), DataFrame(gc, mapp))
+ref_raw
 ```
 
-By default, SCOPE is intended for hg19 reference genome. Note that scDNA sequencing is whole-genome amplification and the mappability score is essential to determine variable binning method. To compute mappability in hg19, we download mappability tracks for 100-mers on the GRCh37/hg19 human reference genome from ENCODE ( `wgEncodeCrgMapabilityAlign100mer.bigwig` from [this link](http://rohsdb.cmb.usc.edu/GBshape/cgi-bin/hgFileUi?db=hg19&g=wgEncodeMapability)). For SCOPE, the whole-genome mappability track on human hg19 assembly is stored as part of the package. Mappability for each target/bin is calculated in the same way as [CODEX2](https://github.com/yuchaojiang/CODEX2/blob/master/README.md). We further filter out bins with low mappability (mappability < 0.9) to reduce artifacts.
-```{r Comment2, echo = FALSE}
-# Previous description: Compute the mean of mappability scores that overlapped reads map to bins, weighted by the width of mappability tracks on the genome reference. 
-```
-
-```{r Comment3, echo = FALSE}
-# mapp_hg19=import(file.path("/path/to/BIGWIG", 'wgEncodeCrgMapabilityAlign100mer.bigwig'))
-# mapp_hg19$score=round(mapp_hg19$score,4)
-# mapp <- getmapp(ref)
-# head(mapp)
-```
-
-```{r, eval=FALSE}
-mapp <- getmapp(ref)
-head(mapp)
-```
-
-The whole-genome mappability track on human hg38 assembly is also stored in SCOPE package. For more details on mappability calculation, please refer to [CODEX2 for hg38](https://github.com/yuchaojiang/CODEX2/blob/master/README.md). 
-
-```{r Comment4, echo = FALSE}
-# To calculate mappability for hg38, we download `hg19ToHg38.over.chain` from [this link](http://hgdownload.cse.ucsc.edu/goldenPath/hg19/liftOver/). This liftOver utility `hg19ToHg38.over.chain` contains the
-# liftOver data needed to convert hg19 coordinates to hg38. 
-
-# chain <- import.chain("hg19ToHg38.over.chain")
-# mapp_hg38 <- liftOver(mapp_hg19, chain)
-# mapp_hg38 = unlist(mapp_hg38)
-```
-
-Load the hg38 reference package and specify argument `genome = BSgenome.Hsapiens.UCSC.hg38` in `getmapp()` function. By default, `BSgenome.Hsapiens.UCSC.hg19` is used. 
+The whole-genome mappability track on human hg38 assembly is also stored in SCOPE package. For more details on mappability calculation, please refer to [CODEX2 for hg38](https://github.com/yuchaojiang/CODEX2/blob/master/README.md). Load the hg38 reference package and specify argument `genome = BSgenome.Hsapiens.UCSC.hg38` in `getmapp()` function. By default, `BSgenome.Hsapiens.UCSC.hg19` is used. 
 
 ```{r, eval=FALSE}
 library(BSgenome.Hsapiens.UCSC.hg38)
-mapp <- getmapp(ref, genome = BSgenome.Hsapiens.UCSC.hg38)
+mapp <- getmapp(ref_raw, genome = BSgenome.Hsapiens.UCSC.hg38)
 head(mapp)
 ```
 
 Note that SCOPE can also be adapted to the mouse genome (mm10) in a similar way (see [CODEX2 for mouse genome](https://github.com/yuchaojiang/CODEX2/blob/master/README.md)). For unknown reference assembly without pre-calculated mappability track, refer to [CODEX2: mappability pre-calculation](https://github.com/yuchaojiang/CODEX2/blob/master/mouse/mapp.R).
 
-## 2.3 Quality control
-`getsampQC()` is used to perform QC step on single cells, where total number/proportion of reads, total number/proportion of mapped reads, total number/proportion of mapped non-duplicate reads, and number/proportion of reads with mapping quality greater than 20 will be returned. Remove samples/cells with low proportion of mapped reads. Filter out bins that have extreme GC content (less than 20% and greater than 80%) and low mappability (less than 0.9). 
-```{r, eval=FALSE}
-# sample QC
-QCmetric = getsampQC(bambedObj)
-
-# bin QC on GC content
-ref = ref[ref$gc>20 & ref$gc<80]
-
-# bin QC on mappability
-low.mapp = which(mapp < 0.9)
-ref = ref[-low.mapp]
-
-seqlevels(ref) = paste0("chr", 1:22)
-ref = sort(ref)
-bambedObj$ref = ref
-```
-
-## 2.4 Getting coverage
-Bad bins, such as segmental duplication regions and gaps near telomeres/centromeres, need to be masked prior to getting coverage. Download segmental duplication regions from [here](http://humanparalogy.gs.washington.edu/build37/data/GRCh37GenomicSuperDup.tab). Download hg19 gaps from [here](https://gist.github.com/leipzig/6123703). Obtain either single-end or paired-end sequencing read depth matrix. 
+## 2.3 Getting coverage
+Obtain either single-end or paired-end sequencing read depth matrix. SCOPE, by default, adopts a fixed binning method to compute the depth of coverage while removing reads that are mapped to multiple genomic locations and to "blacklist" regions. This is followed by an additional step of quality control to remove bins with extreme mappability to avoid erroneous detections. Specifically, "blacklist" bins, including [segmental duplication regions](http://humanparalogy.gs.washington.edu/build37/data/GRCh37GenomicSuperDup.tab) and [gaps in reference assembly](https://gist.github.com/leipzig/6123703) from telomere, centromere, and/or heterochromatin regions. 
 ```{r, eval=FALSE}
 # Get segmental duplication regions
-seg.dup=read.table('GRCh37GenomicSuperDup.tab',head=T)
-seg.dup=seg.dup[!is.na(match(seg.dup[,1],paste('chr',1:22,sep=''))),]
-seg.dup=GRanges(seqnames=seg.dup[,1],ranges=IRanges(start=seg.dup[,2], end=seg.dup[,3]))
-# Get telomere and centromere
-telo.centro=read.table('telomere_centromere.txt',head=T)
-telo.centro=telo.centro[!is.na(match(telo.centro[,2],paste('chr',1:22,sep=''))),]
-telo.centro=GRanges(seqnames=telo.centro[,2],ranges=IRanges(start=telo.centro[,3], end=telo.centro[,4]))
+seg.dup = read.table(system.file("extdata", "GRCh37GenomicSuperDup.tab", package = "SCOPE"), head = T)
+seg.dup = seg.dup[!is.na(match(seg.dup[,1], paste('chr', c(1:22, 'X', 'Y'), sep = ''))),]
+seg.dup = GRanges(seqnames = seg.dup[,1], ranges = IRanges(start=seg.dup[,2], end = seg.dup[,3]))
+# Get hg19 gaps
+gaps = read.table(system.file("extdata", "hg19gaps.txt", package = "SCOPE"), head = T)
+gaps = gaps[!is.na(match(gaps[,2], paste('chr', c(1:22, 'X', 'Y'), sep=''))),]
+gaps = GRanges(seqnames = gaps[,2], ranges = IRanges(start = gaps[,3], end = gaps[,4]))
 # Generate mask region
-mask.ref=sort(c(seg.dup, telo.centro))
+mask.ref = sort(c(seg.dup, gaps))
 
 # Getting raw read depth
-coverageObj <- getcoverage.scDNA(bambedObj, mapqthres = 40, mask.ref, seq='single-end') # Poorly mapped reads (MQ < 40) were filtered out using Samtools, according to Kim et al.
-Y <- coverageObj$Y
-
-# Post-coverage cell QC
-# remove samples whose library prep failed 
-lib.nofail = which(apply(Y,2,sum)>0)
-QCmetric=QCmetric[lib.nofail,]
-sampname=sampname[lib.nofail]
-Y=Y[,lib.nofail]
-# remove samples with low proportion of mapped reads
-filter = which(QCmetric[,'mapq20_prop']>=0.6)
-QCmetric = QCmetric[filter,]
-sampname = sampname[filter]
-Y=Y[,filter]
-
-# We recommend removal of bins whose sum of read counts adjusted by library size are outside 3 MAD from the median. 
-# get library size factor N
-Y.nonzero <- Y[apply(Y, 1, function(x){!any(x==0)}),]
-pseudo.sample <- apply(Y.nonzero,1,function(x){exp(sum(log(x))/length(x))})
-N <- apply(apply(Y.nonzero, 2, function(x){x/pseudo.sample}), 2, median)
-Nmat <- matrix(nrow = nrow(Y), ncol = ncol(Y), data = N, byrow = TRUE)
-# Sum of read counts adjusted by N for each bin
-bin.sum=apply(Y/Nmat,1,sum)
-hist(bin.sum, 100, main = "Sum of read counts adjusted by N for each bin")
-# bin QC: 3 MAD from median
-abline(v=(median(bin.sum)-3*mad(bin.sum)), lty=2, col=2)
-abline(v=(median(bin.sum)+3*mad(bin.sum)), lty=2, col=2)
-Y=Y[(bin.sum>=(median(bin.sum)-3*mad(bin.sum))) & (bin.sum <=(median(bin.sum)+3*mad(bin.sum))),]
-ref=ref[(bin.sum>=(median(bin.sum)-3*mad(bin.sum))) & (bin.sum <=(median(bin.sum)+3*mad(bin.sum)))]
-gc = gc[(bin.sum>=(median(bin.sum)-3*mad(bin.sum))) & (bin.sum <=(median(bin.sum)+3*mad(bin.sum)))]
-Nmat = Nmat[(bin.sum>=(median(bin.sum)-3*mad(bin.sum))) & (bin.sum <=(median(bin.sum)+3*mad(bin.sum))),]
-
+coverageObj <- getcoverage.scDNA(bambedObj, mapqthres = 40, mask.ref, seq='single-end')
+Y_raw <- coverageObj$Y
 ```
+
+## 2.4 Quality control
+`getsampQC()` is used to perform QC step on single cells, where total number/proportion of reads, total number/proportion of mapped reads, total number/proportion of mapped non-duplicate reads, and number/proportion of reads with mapping quality greater than 20 will be returned. Use `qc_scope()` to further remove samples/cells with low proportion of mapped reads, bins that have extreme GC content (less than 20% and greater than 80%) and low mappability (less than 0.9) to reduce artifacts. 
+```{r, eval=FALSE}
+QCmetric_raw = getsampQC(bambedObj)
+qcObj = qc_scope(Y_raw = Y_raw, sampname_raw = sampname_raw, ref_raw = ref_raw, QCmetric_raw = QCmetric_raw)
+Y = qcObj$Y
+sampname = qcObj$sampname
+ref = qcObj$ref
+QCmetric = qcObj$QCmetric
+```
+
+
 
 
 # 3. Running SCOPE
-```{r Comment5, echo=FALSE}
-# How to construct the WGS bed file
-```
-
 ## 3.1 Gini coefficient
 One feature of SCOPE is to identify normal/diploid cells using Gini index. Gini coefficient is calculated for each cell as 2 times the area between the Lorenz curve and the diagonal. The value of the Gini index varies between 0 and 1, where 0 is the most uniform and 1 is the most extreme. Cells with extremely high Gini coefficients(greater than 0.5) are recommended to be excluded. Set up a Gini threshold for identification of diploid/normal cells (for example, Gini less than 0.12). We demonstrate the pre-stored toy dataset as follows. 
-```{r, eval=FALSE}
+```{r, eval=TRUE, message=FALSE}
+library(SCOPE)
 # Load pre-stored toy data. 
 # get gini coefficient for each cell
-Gini = getGini(Y)
+Gini = getGini(Y_sim)
 ```
 
 ## 3.2 Running SCOPE with negative control samples
 
 Normal cell index is determined either by Gini coefficients or prior knowledge. The normalization procedure is embeded an Expectation-Maximization algorithm in the Poisson generalizaed linear model. The final selected optimal number of CNV group will be returned and then perform normalization. 
-```{r, eval=FALSE}
-# Re-calculate library size after cell/bin QC
-Y.nonzero <- Y[apply(Y, 1, function(x){!any(x==0)}),]
-pseudo.sample <- apply(Y.nonzero,1,function(x){exp(1/length(x)*sum(log(x)))})
-N <- apply(apply(Y.nonzero, 2, function(x){x/pseudo.sample}), 2, median)
-Ntotal <- N
-N <- round(N/median(N)*median(colSums(Y)))
-Nmat <- matrix(nrow = nrow(Y), ncol = ncol(Y), data = N, byrow = TRUE)
+```{r, eval=TRUE, message=TRUE}
+Y.nonzero.sim <- Y_sim[apply(Y_sim, 1, function(x){!any(x==0)}),]
+pseudo.sample.sim <- apply(Y.nonzero.sim,1,function(x){exp(1/length(x)*sum(log(x)))})
+Ntotal.sim <- apply(apply(Y.nonzero.sim, 2, function(x){x/pseudo.sample.sim}), 2, median)
+N.sim <- round(Ntotal.sim/median(Ntotal.sim)*median(colSums(Y_sim)))
+Nmat.sim <- matrix(nrow = nrow(Y_sim), ncol = ncol(Y_sim), data = N.sim, byrow = TRUE)
 
 # first-pass CODEX2 run with no latent factors
-normObj <- normalize_codex2_ns_noK(Y_qc =Y,
-                                   gc_qc = ref$gc, 
-                                   K = 1,
-                                   norm_index = which(Gini<=0.12),
-                                   N = N)
-Yhat.noK=normObj$Yhat[[1]]
-beta.hat.noK=normObj$beta.hat[[1]]
+normObj.sim <- normalize_codex2_ns_noK(Y_qc =Y_sim,
+                                       gc_qc = ref_sim$gc,
+                                       K = 1,
+                                       norm_index = which(Gini<=0.12),
+                                       N = N.sim)
+Yhat.noK.sim=normObj.sim$Yhat[[1]]
+beta.hat.noK.sim=normObj.sim$beta.hat[[1]]
+fGC.hat.noK.sim=normObj.sim$fGC.hat[[1]]
 
-# Pre-estimate of ploidy
-ploidy =  PreEst_ploidy(Y = Y, Yhat = Yhat.noK, ref = ref)
-ploidy
+# Ploidy initialization
+ploidy.sim =  PreEst_ploidy(Y = Y_sim, Yhat = Yhat.noK.sim, ref = ref_sim)
 
 # Get initialization
-betahat=beta.hat.noK
-gcfit.temp=Y/Nmat/beta.hat.noK
-alpha0=matrix(nrow=nrow(Y), ncol=ncol(Y)) # adjusted / absolute copy number
-for(j in 1:ncol(alpha0)){
-  cat(j,'\t')
-  loe.fit=loess(gcfit.temp[,j]~ref$gc)
-  gcfit.null=loe.fit$fitted/(ploidy[j]/2)
-  alpha0[,j] = gcfit.temp[,j]/gcfit.null*2
+gcfit.temp.sim = Y_sim/Nmat.sim/beta.hat.noK.sim
+alpha.sim0 = matrix(nrow=nrow(Y_sim), ncol=ncol(Y_sim)) # adjusted / absolute copy number
+for(j in 1:ncol(alpha.sim0)){
+  loe.fit=loess(gcfit.temp.sim[,j]~ref_sim$gc)
+  gcfit.null.sim=loe.fit$fitted/(ploidy.sim[j]/2)
+  alpha.sim0[,j] = gcfit.temp.sim[,j]/gcfit.null.sim*2
 }
-offset=Nmat*matrix(nrow = nrow(Y), ncol = ncol(Y), data = betahat, byrow = FALSE)
 
-normObj_scope=normalize_scope(Y_qc = Y, 
-                              gc_qc = ref$gc, 
-                              K = 1:3, 
-                              norm_index = which(Gini<=0.12), 
-                              N = N, 
-                              T = 1:7, 
-                              alpha0 = alpha0, 
-                              beta0 = beta.hat.noK)
-Yhat = normObj_scope$Yhat[[which.max(normObj_scope$BIC)]]
-alpha = normObj_scope$alpha.hat[[which.max(normObj_scope$BIC)]]
+offset.sim=Nmat.sim*matrix(nrow = nrow(Y_sim), ncol = ncol(Y_sim), data = beta.hat.noK.sim, byrow = FALSE)
+
+# If using high performance clusters, parallel computing is easy and improves computational efficiency. Simply use normalize_scope_foreach() instead of normalize_scope(). All parameters are identical. 
+normObj.scope.sim = normalize_scope_foreach(Y_qc = Y_sim, gc_qc = ref_sim$gc, K = 1:3,
+                                            norm_index = which(Gini<=0.12), N = N.sim, T = 1:7,
+                                            alpha0 = alpha.sim0, beta0 = beta.hat.noK.sim)
+# normObj.scope.sim = normalize_scope(Y_qc = Y_sim, gc_qc = ref_sim$gc, K = 1:3,
+#                                     norm_index = which(Gini<=0.12), N = N.sim, T = 1:7,
+#                                     alpha0 = alpha.sim0, beta0 = beta.hat.noK.sim)
+
+Yhat.sim = normObj.scope.sim$Yhat[[which.max(normObj.scope.sim$BIC)]]
+fGC.hat.sim = normObj.scope.sim$fGC.hat[[which.max(normObj.scope.sim$BIC)]]
 ```
 
 Visualize selection results for _j_-th cell. By default, BIC is used to choose optimal CNV group. 
 ```{r, eval=FALSE}
-choiceofT(Y = Y, gcfit.temp = gcfit.temp, gctemp = ref$gc, 
-          norm_index = which(Gini<=0.12), offset = offset, T = 1:7, alpha = alpha0, 
-          filename = paste0("choiceofTdemo.pdf"))
-```
-
-
-```{r, echo=FALSE, eval=FALSE}
-# Pre-estimate of ploidy
-ploidy = rep(NA, ncol(Y))
-for(j in 1:ncol(Y)){
-cat(j,'\t')
-RCNP = Y[,j]/Yhat.noK[,j]
-cploidy = seq(1.5, 6, 0.05)
-SCNP = matrix(nrow = length(RCNP), ncol = length(cploidy), data = RCNP) * matrix(nrow = length(RCN
-P), ncol = length(cploidy), data = cploidy, byrow = T)
-sos = apply((round(SCNP)-SCNP), 2, function(x){sum(x^2)})
-ploidy[j] = cploidy[which.min(sos)]
-}
-
-
-Yj = Y[,j]
-Nj = Nmat[1,j]
-betatemp = beta.hat.noK[[1]]
-gcfitj = Y[,j]/Nmat[1,j]/beta.hat.noK[[1]]
-gctemp = ref$gc
-Pois.obj[[j]] = multi_run.Pois(gcfitj = gcfitj, gctemp = gctemp, Yj=Yj, Nj=Nj, betatemp=betatemp, numGroup = 1:5, rerun = 10, verbose.plot = TRUE, qc.thres = 1e-10, min.prop = 0)
+choiceofT(Y = Y_sim, gcfit.temp = gcfit.temp.sim, gctemp = ref_sim$gc,
+          norm_index = which(Gini<=0.12), offset = offset.sim, T = 1:7, alpha = alpha.sim0,
+          filename = "choiceofTdemo.pdf")
 ```
 
 ```{r, out.width = "500px", include=TRUE, fig.align="center", echo=FALSE}
-# knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Figure2_EM_fitting.png")
-knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/demo_EM_fitting.png")
+knitr::include_graphics("/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/demo_EM_fitting.png")
+# knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/demo_EM_fitting.png")
 ```
 
 ## 3.3 Cross-sample segmentation by SCOPE
 
-SCOPE provides the cross-sample segmentation, which outputs shared breakpoints across cells from the same clone. This step processes the entire genome chromosome by chromosome.
+SCOPE provides the cross-sample segmentation, which outputs shared breakpoints across cells from the same clone. This step processes the entire genome chromosome by chromosome. Shared breakpoints and integer copy-number profiles will be returned. 
 ```{r, eval=FALSE}
-segment_cs = vector('list',7)
-names(segment_cs) = c("poolcall", "finalcall", "finalcall.idv", "image.orig", "image.seg", "iCN", "iCN.idv")
-for (chri in paste0("chr", 1:22)) {
+chrs = unique(as.character(seqnames(ref_sim)))
+segment_cs = vector('list',length = length(chrs))
+names(segment_cs) = chrs
+for (chri in chrs) {
   message('\n', chri, '\n')
-  temp_segment_cs = segmentCBScs(Y = Y[which(seqnames(ref)==chri),], 
-                                 Yhat = Yhat[which(seqnames(ref)==chri),], 
-                                 sampname = colnames(Y), ref = ref[which(seqnames(ref)==chri)], 
-                                 mode = "integer", segment.idv = FALSE, max.ns = 1)
-  temp_segment_cs$poolcall[,'st'] = temp_segment_cs$poolcall[,'st'] + min(which(seqnames(ref)==chri)) - 1
-  temp_segment_cs$poolcall[,'end'] = temp_segment_cs$poolcall[,'end'] + min(which(seqnames(ref)==chri)) - 1
-  temp_segment_cs$finalcall[,'st_bin'] = temp_segment_cs$finalcall[,'st_bin'] + min(which(seqnames(ref)==chri)) - 1
-  temp_segment_cs$finalcall[,'ed_bin'] = temp_segment_cs$finalcall[,'ed_bin'] + min(which(seqnames(ref)==chri)) - 1
-  
-  segment_cs = mapply(rbind, segment_cs, temp_segment_cs, SIMPLIFY=FALSE)
+  segment_cs[[chri]] = segmentCBScs(Y = Y_sim,
+                                  Yhat = Yhat.sim,
+                                  sampname = colnames(Y_sim),
+                                  ref = ref_sim,
+                                  chr = chri,
+                                  mode = "integer", max.ns = 1)
 }
-
-iCN = segment_cs$iCN
+iCN = do.call(rbind, lapply(segment_cs, function(z){z[["iCN"]]}))
 ```
-Shared breakpoints and integer copy-number profiles will be returned. 
 
 ## 3.4 Visualization
 
 SCOPE offers heatmap of inferred integer copy-number profiles with cells clustered by hierarchical clustering.
 ```{r, eval=FALSE}
-iCNplot(iCNmat = iCN, ref = ref, Gini = Gini, filename = "iCNplot")
+iCNplot(iCNmat = iCN, ref = ref_sim, Gini = Gini, filename = "iCNplot")
 ```
 
 We demonstrate SCOPE on scDNA-seq data of two breast cancer patients (T10 and T16) from [Navin et al. 2011 Nature](https://www.nature.com/articles/nature09807). Figures below give heatmaps of genome-wide estimated integer copy numbers across all cells from T10 and T16. 
 
 ```{r, out.width = "800px", include=TRUE, fig.align="center", echo=FALSE}
-knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Navin_et_al_heatmap_T10.png")
+knitr::include_graphics("/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Navin_et_al_heatmap_T10.png")
+# knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Navin_et_al_heatmap_T10.png")
 ```
 
 ```{r, out.width = "800px", include=TRUE, fig.align="center", echo=FALSE}
-knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Navin_et_al_heatmap_T16.png")
+knitr::include_graphics("/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Navin_et_al_heatmap_T16.png")
+# knitr::include_graphics("C:/Users/rujin/Dropbox/writing/SCOPE_Git/Figures/Navin_et_al_heatmap_T16.png")
 ```

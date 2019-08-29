@@ -34,7 +34,7 @@
 getfGCj = function(gcfit.tempj, gctemp, Yj, offsetj, T, draw.plot = NULL, alphaj, minCountQC){
   alphaj = pmax(1,round(alphaj))
   if(is.null(draw.plot)){draw.plot = FALSE}
-  loglik = BIC = CV_MSE = rep(NA,length(T))
+  loglik = BIC = rep(NA,length(T))
 
   fGCi.obj = vector('list', length(T))
   Z.obj = vector('list', length(T))
@@ -71,13 +71,13 @@ getfGCj = function(gcfit.tempj, gctemp, Yj, offsetj, T, draw.plot = NULL, alphaj
 
       diff.GC = Inf; diff.Z = Inf
       iter = 1
-      while(iter<= 3 | diff.GC > 1e-3 | diff.Z > 1e-3){
+      while(iter<= 3 | diff.GC > 5e-6 | diff.Z > 5e-3){
         Mtemp = Mstep(Z, gcfit.tempj, gctemp)
         vec_pi.new = Mtemp$vec_pi
         fGCi.new = Mtemp$fGCi
         Z.new = Estep(fGCi.new, vec_pi.new, Yj, offsetj)
-        diff.GC = sum((fGCi-fGCi.new)^2)
-        diff.Z = sum((Z.new-Z)^2)
+        diff.GC = sum((fGCi-fGCi.new)^2)/length(fGCi)
+		diff.Z = sum((Z.new-Z)^2)/length(Z)
         vec_pi = vec_pi.new
         Z = Z.new
         fGCi = fGCi.new

@@ -7,24 +7,33 @@
 #' @param Yhat normalized read depth matrix
 #' @param sampname vector of sample names
 #' @param ref GRanges object after quality control procedure
+#' @param chr chromosome name. Make sure it is consistent with the reference genome.
 #' @param mode format of returned copy numbers. Only integer mode is supported for scDNA-seq data.
-#' @param segment.idv logical, whether to perform individual segmentation. Default is \code{FALSE}.
 #' @param max.ns a number specifying how many rounds of nested structure searching would be performed. Defalut is \code{0}.
 #'
 #' @return A list with components
 #'   \item{poolcall}{Cross-sample CNV callings indicating shared breakpoints}
 #'   \item{finalcall}{Final cross-sample segmented callset of CNVs with genotyping results}
-#'   \item{finalcall.idv}{Final individual segmented callset of CNVs with genotyping results}
 #'   \item{image.orig}{A matrix giving logarithm of normalized z-scores}
 #'   \item{image.seg}{A matrix of logarithm of estimated copy number over 2}
 #'   \item{iCN}{A matrix of inferred integer copy number profiles}
-#'   \item{iCN.idv}{A matrix of inferred integer copy number profiles by individual segmentation}
 #'
 #' @author Rujin Wang \email{rujin@email.unc.edu}
 #' @importFrom GenomicRanges GRanges
 #' @importFrom IRanges IRanges RangesList Views countOverlaps
+#' @importFrom GenomeInfoDb seqnames
 #' @export
-segmentCBScs = function(Y, Yhat, sampname, ref, mode = "integer", segment.idv = FALSE, max.ns = 0) {
+segmentCBScs = function(Y, Yhat, sampname, ref, chr, mode = "integer", max.ns = 0) {
+  if(is.na(match(chr, unique(as.character(seqnames(ref)))))){
+    stop("Chromosome not found in the reference genome! Make sure that all chromosomes are named consistently.  \n")
+  }
+
+  stbin.flag = min(which(seqnames(ref)==chr))
+  Y = Y[which(seqnames(ref)==chr),]
+  Yhat = Yhat[which(seqnames(ref)==chr),]
+  ref = ref[which(seqnames(ref)==chr)]
+
+
   create_chptsmat = function(mat1, st_end){
     st = st_end[1]
     end = st_end[2]
@@ -573,15 +582,13 @@ segmentCBScs = function(Y, Yhat, sampname, ref, mode = "integer", segment.idv = 
   for (i in 1:nrow(poolcall)) {
     st_bin = poolcall[i,"st"]
     ed_bin = poolcall[i,"end"]
-    # st_bp <- start(ref)[as.numeric(poolcall[i,"st"])]
-    # ed_bp <- end(ref)[as.numeric(poolcall[i,"end"])]
 
     yact.ind = colSums(Y[st_bin:ed_bin, ,drop = F])
     lambda.ind = colSums(Yhat[st_bin:ed_bin, ,drop = F])
     if (mode == "integer") {
       chat.ind <- round(2 * (yact.ind/lambda.ind))
     } else if (mode == "fraction") {
-      chat.ind <- 2 * (yact/lambda)
+      chat.ind <- 2 * (yact.ind/lambda.ind)
     }
     chat.ind[chat.ind > 14] = 14
 
@@ -590,13 +597,10 @@ segmentCBScs = function(Y, Yhat, sampname, ref, mode = "integer", segment.idv = 
     iCN[poolcall[i,1]:poolcall[i,2], ] = matrix(nrow = (poolcall[i,2] - poolcall[i,1] + 1),
                                                 ncol = ncol(iCN), data = chat.ind, byrow = TRUE)
 
-    # temp = cbind(colnames(Y), rep(st_bin, ncol(Y)), rep(ed_bin, ncol(Y)), rep(st_bp, ncol(Y)),
-    #              rep(ed_bp, ncol(Y)), chat.ind)
     temp = cbind(colnames(Y), rep(st_bin, ncol(Y)), rep(ed_bin, ncol(Y)), chat.ind)
     temp = temp[chat.ind != 2, ]
     finalcall = rbind(finalcall, temp)
     rownames(finalcall) = NULL
-    # colnames(finalcall) = c("sample_name", "st_bin", "ed_bin", "st_bp", "ed_bp", "cnv_no")
     colnames(finalcall) = c("sample_name", "st_bin", "ed_bin", "cnv_no")
   }
 
@@ -604,140 +608,12 @@ segmentCBScs = function(Y, Yhat, sampname, ref, mode = "integer", segment.idv = 
 
   finalcall$st_bin = as.numeric(paste(finalcall$st_bin))
   finalcall$ed_bin = as.numeric(paste(finalcall$ed_bin))
-  # finalcall$st_bp = as.numeric(paste(finalcall$st_bp))
-  # finalcall$ed_bp = as.numeric(paste(finalcall$ed_bp))
   finalcall$cnv_no = as.numeric(paste(finalcall$cnv_no))
 
 
-  finalcall.idv = NULL
-  iCN.idv = matrix(data=NA, nrow = nrow(Y), ncol = ncol(Y))
-
-  if(segment.idv){
-    # CBS segmenting by individuals
-    for(sampno in 1:ncol(Y)) {
-      message("Segmenting sample ", sampno, ": ", sampname[sampno], ".")
-      chpts0 = c(1, nrow(Y))
-      idv.scan = compute_lratio(Y[, sampno], Yhat[, sampno], chpts0)
-      i = idv.scan$i
-      j = idv.scan$j
-      yact = idv.scan$yact
-      lambda = idv.scan$lambda
-      chat = idv.scan$chat
-      lratio = idv.scan$lratio
-      init.finalmat = idv.scan$finalmat
-
-      if(!is.null(init.finalmat) && nrow(init.finalmat)>0){
-        # Further nested searching
-        chpts = init.finalmat[,1:2]
-        if(is.null(dim(chpts))){
-          chpts = t(as.matrix(chpts))
-        }
-
-        keep_going = 1
-        # number of nested searching
-        num_ns = 1
-        while (!all(keep_going==0) & num_ns <= 2) {
-          nested.output = search_nested(Y[, sampno], Yhat[, sampno], chpts)
-          keep_going = sapply(nested.output, function(z) z$is.nested)
-
-          newchpts = NULL
-          for (r in 1:length(keep_going)) {
-            if(keep_going[r]){
-              newchpts = rbind(newchpts, nested.output[[r]]$finalmat[,1:2])
-            } else{
-              newchpts = rbind(newchpts, chpts[r,])
-            }
-          }
-          chpts = newchpts
-          num_ns = num_ns + 1
-        }
-
-        # backward compute lratio after nested searching
-        temp = NULL
-        for(r in 1:nrow(chpts)){
-          idx = which(i == chpts[r,1] & j == chpts[r,2])
-          if(length(idx)!=0){
-            temp = rbind(temp, c(yact[idx], lambda[idx], chat[idx], lratio[idx]))
-          } else{
-            temp = rbind(temp, rep(NA, 4))
-          }
-        }
-        finalmat = cbind(chpts, temp)
-        # finalmat = finalmat[!is.na(finalmat[,6]) & finalmat[,6] > 0,]
-        finalmat = finalmat[!is.na(finalmat[,6]), , drop = F]
-        finalmat = finalmat[order(-finalmat[,6]), , drop = F]
-      } else{ # if init.finalmat = NULL, the whole chromosome is normal
-        finalmat = matrix(data = c(chpts0, sum(Y[,sampno]), sum(Yhat[,sampno]), 2, 0), nrow = 1, ncol = 6, byrow = TRUE)
-      }
-
-      loglikeij <- rep(NA, nrow(finalmat))
-      mBIC <- rep(NA, length(loglikeij))
-
-      for (s in 1:nrow(finalmat)) {
-        tau <- sort(unique(c(as.vector(finalmat[1:s, 1:2]), chpts0)))
-        P <- length(tau) - 2
-
-        temp = create_chptsmat(finalmat[1:s,1:2,drop = F], chpts0)
-        L = rep(NA, nrow(temp))
-        for (r in 1:length(L)) {
-          yact.temp = sum(Y[temp[r,1]:temp[r,2], sampno])
-          lambda.temp = sum(Yhat[temp[r,1]:temp[r,2], sampno])
-          yact.temp[lambda.temp < 20] <- 20
-          lambda.temp[lambda.temp < 20] <- 20
-          L[r] = (1-round(2*yact.temp/lambda.temp)/2)*lambda.temp + log((round(2 * (yact.temp/lambda.temp)) + 1e-04)/2.0001) * yact.temp
-        }
-        loglikeij[s] = sum(L)
-
-        mbic <- loglikeij[s]
-        mbic <- mbic - 0.5 * sum(log(tau[2:length(tau)] - tau[1:(length(tau) - 1)]))
-        mbic <- mbic + (0.5 - P) * log(nrow(Y))
-        mBIC[s] <- mbic
-      }
-      mBIC <- round(mBIC, digits = 3)
-
-      if (mBIC[1] > 0) {
-        finalmat <- (cbind(finalmat, mBIC)[1:which.max(mBIC), , drop = F])
-        idv.seg.out <- create_chptsmat(finalmat[,1:2,drop = F], chpts0)
-        idv.seg.out = cbind(idv.seg.out, rep(NA, nrow(idv.seg.out)))
-        # output copy_no for the entire segments
-        for(r in 1:nrow(idv.seg.out)){
-          idx = which(i == idv.seg.out[r,1] & j == idv.seg.out[r,2])
-          if(length(idx)!=0){
-            idv.seg.out[r,3] = chat[idx]
-          } else{
-            # this segment consists of only one point
-            idx2 = idv.seg.out[r,1]
-            y.idv = Y[idx2,sampno]
-            yhat.idv = Yhat[idx2,sampno]
-            if(yhat.idv < 20){
-              yhat.idv = 20
-            }
-            idv.seg.out[r,3] = round(2 * (y.idv/yhat.idv))
-          }
-          iCN.idv[idv.seg.out[r,1]:idv.seg.out[r,2],sampno] = idv.seg.out[r,3]
-        }
-        finalmat <- cbind(rep(sampname[sampno], nrow(finalmat)), finalmat)
-        finalcall.idv <- rbind(finalcall.idv, finalmat)
-      }
-    }
-
-    if (is.vector(finalcall.idv)) {
-      finalcall.idv <- t(as.matrix(finalcall.idv))
-    }
-
-    colnames(finalcall.idv) <- c("sample_name", "st_bin", "ed_bin", "raw_cov", "norm_cov", "copy_no", "lratio", "mBIC")
-    rownames(finalcall.idv) <- rep("", nrow(finalcall.idv))
-    lratio = as.numeric(finalcall.idv[, "lratio"])
-    rownames(finalcall.idv) = paste("cnv", 1:nrow(finalcall.idv), sep = "")
-    finalcall.idv = as.data.frame(finalcall.idv)
-    finalcall.idv$copy_no = as.numeric(paste(finalcall.idv$copy_no))
-    finalcall.idv$raw_cov = as.numeric(paste(finalcall.idv$raw_cov))
-    finalcall.idv$norm_cov = as.numeric(paste(finalcall.idv$norm_cov))
-    finalcall.idv$st_bin = as.numeric(paste(finalcall.idv$st_bin))
-    finalcall.idv$ed_bin = as.numeric(paste(finalcall.idv$ed_bin))
-    finalcall.idv$lratio = as.numeric(paste(finalcall.idv$lratio))
-    finalcall.idv$mBIC = as.numeric(paste(finalcall.idv$mBIC))
-  }
-
-  return(list(poolcall = poolcall, finalcall = finalcall, finalcall.idv = finalcall.idv, image.orig = image.orig, image.seg = image.seg, iCN = iCN, iCN.idv = iCN.idv))
+  poolcall[,'st'] = poolcall[,'st'] + stbin.flag - 1
+  poolcall[,'end'] = poolcall[,'end'] + stbin.flag - 1
+  finalcall[,'st_bin'] = finalcall[,'st_bin'] + stbin.flag - 1
+  finalcall[,'ed_bin'] = finalcall[,'ed_bin'] + stbin.flag - 1
+  return(list(poolcall = poolcall, finalcall = finalcall, image.orig = image.orig, image.seg = image.seg, iCN = iCN))
 }
