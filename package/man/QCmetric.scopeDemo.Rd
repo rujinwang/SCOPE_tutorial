@@ -5,17 +5,11 @@
 \alias{QCmetric.scopeDemo}
 \title{Pre-stored QCmetric data for demonstration purposes}
 \format{Pre-computed using whole genome sequencing data of
- three single cells from Navin et al.}
+ three single cells from 10X Genomics Single-Cell CNV solution}
 \usage{
 QCmetric.scopeDemo
 }
 \description{
 Pre-stored QCmetric data for demonstration purposes
-}
-\references{
-Navin, N., Kendall, J., Troge, J., Andrews, P., Rodgers, L.,
- McIndoo, J., Cook, K., Stepansky, A., Levy, D., Esposito, D.,
- et al. (2011). Tumour evolution inferred by single-cell
- sequencing. Nature 472, 90-94.
 }
 \keyword{datasets}

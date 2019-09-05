@@ -49,7 +49,7 @@
 #' coverageObj <- getcoverage.scDNA(bambedObj,
 #'                                  mapqthres = 40,
 #'                                  mask.ref,
-#'                                  seq='single-end')
+#'                                  seq='paired-end')
 #' Y_raw <- coverageObj$Y
 #'
 #' @author Rujin Wang \email{rujin@email.unc.edu}

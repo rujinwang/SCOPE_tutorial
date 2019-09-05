@@ -149,7 +149,7 @@ gaps = GRanges(seqnames = gaps[,2], ranges = IRanges(start = gaps[,3], end = gap
 mask.ref = sort(c(seg.dup, gaps))
 
 # Getting raw read depth
-coverageObj <- getcoverage.scDNA(bambedObj, mapqthres = 40, mask.ref, seq='single-end')
+coverageObj <- getcoverage.scDNA(bambedObj, mapqthres = 40, mask.ref, seq='paired-end')
 Y_raw <- coverageObj$Y
 ```
 

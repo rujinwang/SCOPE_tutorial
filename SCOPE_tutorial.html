@@ -375,7 +375,7 @@ gaps =<span class="st"> </span><span class="kw">GRanges</span>(<span class="dt">
 mask.ref =<span class="st"> </span><span class="kw">sort</span>(<span class="kw">c</span>(seg.dup, gaps))
 
 <span class="co"># Getting raw read depth</span>
-coverageObj &lt;-<span class="st"> </span><span class="kw">getcoverage.scDNA</span>(bambedObj, <span class="dt">mapqthres =</span> <span class="dv">40</span>, mask.ref, <span class="dt">seq=</span><span class="st">'single-end'</span>)
+coverageObj &lt;-<span class="st"> </span><span class="kw">getcoverage.scDNA</span>(bambedObj, <span class="dt">mapqthres =</span> <span class="dv">40</span>, mask.ref, <span class="dt">seq=</span><span class="st">'paired-end'</span>)
 Y_raw &lt;-<span class="st"> </span>coverageObj<span class="op">$</span>Y</code></pre></div>
 </div>
 <div id="quality-control" class="section level2">
