@@ -10,11 +10,16 @@ getGini(Y)
 \item{Y}{raw read depth matrix after quality control procedure}
 }
 \value{
-\item{Gini}{Vector of Gini coefficients for single cells from scDNA-seq}
+\item{Gini}{Vector of Gini coefficients for single cells
+    from scDNA-seq}
 }
 \description{
-Gini index is defined as two times the area between the Lorenz curve
-and the diagonal.
+Gini index is defined as two times the area
+between the Lorenz curve and the diagonal.
+}
+\examples{
+Gini = getGini(Y_sim)
+
 }
 \author{
 Rujin Wang \email{rujin@email.unc.edu}

@@ -18,13 +18,31 @@ PreEst_ploidy(Y, Yhat, ref, maxPloidy = 6, minPloidy = 1.5,
 
 \item{minPloidy}{minimum ploidy candidate. Defalut is \code{1.5}}
 
-\item{minBinWidth}{the minimum number of bins for a changed segment. Defalut is \code{5}}
+\item{minBinWidth}{the minimum number of bins for a changed segment.
+Defalut is \code{5}}
 }
 \value{
 \item{ploidy.SoS}{Vector of pre-estimated ploidies for each cell}
 }
 \description{
 Pre-estimate ploidies across all cells
+}
+\examples{
+Gini = getGini(Y_sim)
+
+# first-pass CODEX2 run with no latent factors
+normObj.sim <- normalize_codex2_ns_noK(Y_qc =Y_sim,
+                                       gc_qc = ref_sim$gc,
+                                       norm_index = which(Gini<=0.12))
+Yhat.noK.sim=normObj.sim$Yhat
+beta.hat.noK.sim=normObj.sim$beta.hat
+fGC.hat.noK.sim=normObj.sim$fGC.hat
+N.sim = normObj.sim$N
+
+# Ploidy initialization
+ploidy.sim =  PreEst_ploidy(Y = Y_sim, Yhat = Yhat.noK.sim, ref = ref_sim)
+ploidy.sim
+
 }
 \author{
 Rujin Wang \email{rujin@email.unc.edu}

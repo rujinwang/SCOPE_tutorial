@@ -15,11 +15,14 @@ segmentCBScs(Y, Yhat, sampname, ref, chr, mode = "integer", max.ns = 0)
 
 \item{ref}{GRanges object after quality control procedure}
 
-\item{chr}{chromosome name. Make sure it is consistent with the reference genome.}
+\item{chr}{chromosome name. Make sure it is consistent with the
+reference genome.}
 
-\item{mode}{format of returned copy numbers. Only integer mode is supported for scDNA-seq data.}
+\item{mode}{format of returned copy numbers. Only integer mode is
+supported for scDNA-seq data.}
 
-\item{max.ns}{a number specifying how many rounds of nested structure searching would be performed. Defalut is \code{0}.}
+\item{max.ns}{a number specifying how many rounds of nested structure
+searching would be performed. Defalut is \code{0}.}
 }
 \value{
 A list with components
@@ -30,8 +33,16 @@ A list with components
   \item{iCN}{A matrix of inferred integer copy number profiles}
 }
 \description{
-SCOPE offers a cross-sample Poisson likelihood-based recursive segmentation,
- enabling shared breakpoints across cells from the same genetic background.
+SCOPE offers a cross-sample Poisson likelihood-based
+ recursive segmentation, enabling shared breakpoints across cells
+ from the same genetic background.
+}
+\examples{
+Yhat.sim = normObj.scopeDemo$Yhat[[which.max(normObj.scopeDemo$BIC)]]
+segment_cs_chr1 = segmentCBScs(Y = Y_sim, Yhat = Yhat.sim,
+                               sampname = colnames(Y_sim),
+                               ref = ref_sim, chr = "chr1", max.ns = 1)
+
 }
 \author{
 Rujin Wang \email{rujin@email.unc.edu}

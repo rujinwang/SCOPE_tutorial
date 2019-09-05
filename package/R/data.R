@@ -1,31 +1,87 @@
-#' GRanges with mappability scores for hg19
-#'
-#' GRanges of mappability track for 100-mers on the GRCh37/hg19 human reference
-#'  genome from ENCODE.
-#'
-#' @format A GRanges object with 21591667 ranges and 1 metadata column of mappability scores
-#'
-#' @references \url{http://rohsdb.cmb.usc.edu/GBshape/cgi-bin/hgFileUi?db=hg19&g=wgEncodeMapability}
-"mapp_hg19"
-
-
-#' GRanges with mappability scores for hg38
-#'
-#' Use liftOver utility to convert hg19 coordinates to hg38
-#'
-#' @format A GRanges object with 21584930 ranges and 1 metadata column of mappability scores
-#'
-#' @references \url{http://rohsdb.cmb.usc.edu/GBshape/cgi-bin/hgFileUi?db=hg19&g=wgEncodeMapability}
-"mapp_hg38"
-
-
 #' A read count matrix in the toy dataset
 #'
+#' @docType data
+#'
 #' @format A read count matrix with 1544 bins and 39 cells
+#'
+#' @keywords datasets
 "Y_sim"
 
 
 #' A reference genome in the toy dataset
 #'
+#' @docType data
+#'
 #' @format A GRanges object with 1544 bins and 1 metadata column of GC content
+#'
+#' @keywords datasets
 "ref_sim"
+
+
+#' A post cross-sample segmentation integer copy number matrix returned by
+#'  SCOPE in the demo
+#'
+#' @docType data
+#'
+#' @format A post cross-sample segmentation integer copy number matrix of
+#'  five toy cells returned by SCOPE
+#'
+#' @keywords datasets
+"iCN_sim"
+
+
+#' Pre-stored normObj.scope data for demonstration purposes
+#'
+#' @docType data
+#'
+#' @format Pre-computed by SCOPE using pre-stored data \code{Y_sim}
+#'
+#' @keywords datasets
+"normObj.scopeDemo"
+
+
+#' Pre-stored coverageObj.scope data for demonstration purposes
+#'
+#' @docType data
+#'
+#' @format Pre-computed using whole genome sequencing data of
+#'  three single cells from Navin et al.
+#'
+#' @references
+#' Navin, N., Kendall, J., Troge, J., Andrews, P., Rodgers, L.,
+#'  McIndoo, J., Cook, K., Stepansky, A., Levy, D., Esposito, D.,
+#'  et al. (2011). Tumour evolution inferred by single-cell
+#'  sequencing. Nature 472, 90-94.
+#'
+#' @keywords datasets
+"coverageObj.scopeDemo"
+
+
+#' Pre-stored QCmetric data for demonstration purposes
+#'
+#' @docType data
+#'
+#' @format Pre-computed using whole genome sequencing data of
+#'  three single cells from Navin et al.
+#'
+#' @references
+#' Navin, N., Kendall, J., Troge, J., Andrews, P., Rodgers, L.,
+#'  McIndoo, J., Cook, K., Stepansky, A., Levy, D., Esposito, D.,
+#'  et al. (2011). Tumour evolution inferred by single-cell
+#'  sequencing. Nature 472, 90-94.
+#'
+#' @keywords datasets
+"QCmetric.scopeDemo"
+
+
+
+
+#' Pre-stored 500kb-size reference genome for demonstration purposes
+#'
+#' @docType data
+#'
+#' @format Pre-computed using whole genome sequencing data
+#'  with GC content and mappability scores
+#'
+#' @keywords datasets
+"ref.scopeDemo"

@@ -7,11 +7,13 @@
 getbambed_scope(bamdir, bedFile, sampname)
 }
 \arguments{
-\item{bamdir}{vector of the directory of a bam file. Should be in the same order as sample names in \code{sampname}.}
+\item{bamdir}{vector of the directory of a bam file. Should be in the same
+order as sample names in \code{sampname}.}
 
 \item{bedFile}{path to the whole genome bed file}
 
-\item{sampname}{vector of sample names. Should be in the same order as bam directories in \code{bamdir}.}
+\item{sampname}{vector of sample names. Should be in the same order as bam
+directories in \code{bamdir}.}
 }
 \value{
 A list with components
@@ -20,7 +22,22 @@ A list with components
   \item{ref}{A GRanges object specifying whole genomic bin positions}
 }
 \description{
-Get bam file directories, sample names, and whole genomic bins from .bed file
+Get bam file directories, sample names, and whole genomic
+ bins from .bed file
+}
+\examples{
+library(WGSmapp)
+bedFile <- system.file("extdata", "scWGA500kbsort.bed", package = "SCOPE")
+bamfolder <- system.file("extdata", package = "WGSmapp")
+bamFile <- list.files(bamfolder, pattern = '*.dedup.bam$')
+bamdir <- file.path(bamfolder, bamFile)
+sampname_raw = sapply(strsplit(bamFile, ".", fixed = TRUE), "[", 1)
+bambedObj <- getbambed_scope(bamdir = bamdir, bedFile = bedFile,
+                             sampname = sampname_raw)
+bamdir <- bambedObj$bamdir
+sampname_raw <- bambedObj$sampname
+ref_raw <- bambedObj$ref
+
 }
 \author{
 Rujin Wang \email{rujin@email.unc.edu}

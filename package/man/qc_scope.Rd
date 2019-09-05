@@ -11,21 +11,29 @@ qc_scope(Y_raw, sampname_raw, ref_raw, QCmetric_raw, cov_thresh = 0,
 \arguments{
 \item{Y_raw}{raw read count matrix returned from \code{\link{getcoverage.scDNA}}}
 
-\item{sampname_raw}{sample names for quality control returned from \code{\link{getbambed_scope}}}
+\item{sampname_raw}{sample names for quality control returned
+from \code{\link{getbambed_scope}}}
 
-\item{ref_raw}{raw GRanges object with corresponding GC content and mappability for quality control returned from \code{\link{getbambed_scope}}}
+\item{ref_raw}{raw GRanges object with corresponding GC content
+and mappability for quality control returned from \code{\link{getbambed_scope}}}
 
-\item{QCmetric_raw}{a QC metric for single cells returned from \code{\link{getsampQC}}}
+\item{QCmetric_raw}{a QC metric for single cells returned from
+\code{\link{getsampQC}}}
 
-\item{cov_thresh}{scalar variable specifying the lower bound of read count summation of each cell. Default is \code{0}}
+\item{cov_thresh}{scalar variable specifying the lower bound of read count
+summation of each cell. Default is \code{0}}
 
-\item{mapq20_thresh}{scalar variable specifying the lower threshold of proportion of reads with mapping quality greater than 20. Default is \code{0.3}}
+\item{mapq20_thresh}{scalar variable specifying the lower threshold
+of proportion of reads with mapping quality greater than 20. Default is \code{0.3}}
 
-\item{mapp_thresh}{scalar variable specifying mappability of each genomic bin. Default is \code{0.9}}
+\item{mapp_thresh}{scalar variable specifying mappability of
+each genomic bin. Default is \code{0.9}}
 
-\item{gc_thresh}{vector specifying the lower and upper bound of GC content threshold for quality control. Default is \code{20-80}}
+\item{gc_thresh}{vector specifying the lower and upper bound of
+GC content threshold for quality control. Default is \code{20-80}}
 
-\item{nMAD}{scalar variable specifying the number of MAD from the median of total read counts adjusted by library size for each cell. Default is \code{3}}
+\item{nMAD}{scalar variable specifying the number of MAD from the median
+of total read counts adjusted by library size for each cell. Default is \code{3}}
 }
 \value{
 A list with components
@@ -36,6 +44,15 @@ A list with components
 }
 \description{
 Perform QC step on single cells and bins.
+}
+\examples{
+Y_raw = coverageObj.scopeDemo$Y
+sampname_raw = rownames(QCmetric.scopeDemo)
+ref_raw = ref.scopeDemo
+QCmetric_raw = QCmetric.scopeDemo
+qcObj = qc_scope(Y_raw = Y_raw, sampname_raw = sampname_raw,
+                 ref_raw = ref_raw, QCmetric_raw = QCmetric_raw)
+
 }
 \author{
 Rujin Wang \email{rujin@email.unc.edu}

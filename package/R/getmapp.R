@@ -1,23 +1,46 @@
 if(getRversion() >= "2.15.1"){
-  utils::globalVariables(c("BSgenome.Hsapiens.UCSC.hg19", "mapp_hg19", "mapp_hg38", "seqlevelsStyle<-"))
+  utils::globalVariables(c("BSgenome.Hsapiens.UCSC.hg19",
+                           "mapp_hg19", "mapp_hg38", "seqlevelsStyle<-"))
 }
 #' @title Compute mappability
 #' @name getmapp
 #'
-#' @description Compute mappability for each bin. Note that scDNA sequencing is
-#' whole-genome amplification and the mappability score is essential to
-#' determine variable binning method. Mappability track for 100-mers on the
-#' GRCh37/hg19 human reference genome from ENCODE is pre-saved. Compute the mean
-#' of mappability scores that overlapped reads map to bins, weighted by the width
-#' of mappability tracks on the genome reference. Use liftOver utility to calculate
-#' mappability for hg38, which is pre-saved as well.
+#' @description Compute mappability for each bin. Note that scDNA
+#' sequencing is whole-genome amplification and the mappability
+#' score is essential to determine variable binning method.
+#' Mappability track for 100-mers on the GRCh37/hg19 human
+#' reference genome from ENCODE is pre-saved. Compute the mean
+#' of mappability scores that overlapped reads map to bins,
+#' weighted by the width of mappability tracks on the genome
+#' reference. Use liftOver utility to calculate mappability
+#' for hg38, which is pre-saved as well.
 #'
-#' @param ref GRanges object returned from \code{\link[CODEX2]{getbambed}}
+#' @param ref GRanges object returned from \code{getbambed_scope}
 #' @param genome by default, \code{genome = BSgenome.Hsapiens.UCSC.hg19}.
-#' To calculate mappability for hg38, specify \code{genome = BSgenome.Hsapiens.UCSC.hg38}
+#' To calculate mappability for hg38, specify
+#' \code{genome = BSgenome.Hsapiens.UCSC.hg38}
 #'
 #' @return
 #'   \item{mapp}{Vector of mappability for each bin/target}
+#'
+#' @examples
+#' library(WGSmapp)
+#' bedFile <- system.file("extdata",
+#'                        "scWGA500kbsort.bed",
+#'                        package = "SCOPE")
+#' bamfolder <- system.file("extdata", package = "WGSmapp")
+#' bamFile <- list.files(bamfolder, pattern = '*.dedup.bam$')
+#' bamdir <- file.path(bamfolder, bamFile)
+#' sampname_raw = sapply(strsplit(bamFile, ".", fixed = TRUE), "[", 1)
+#' bambedObj <- getbambed_scope(bamdir = bamdir,
+#'                              bedFile = bedFile,
+#'                              sampname = sampname_raw)
+#' bamdir <- bambedObj$bamdir
+#' sampname_raw <- bambedObj$sampname
+#' ref_raw <- bambedObj$ref
+#'
+#' data("mapp_hg19")
+#' mapp <- getmapp(ref_raw, genome = BSgenome.Hsapiens.UCSC.hg19)
 #'
 #' @author Rujin Wang \email{rujin@email.unc.edu}
 #' @import BSgenome.Hsapiens.UCSC.hg19 utils

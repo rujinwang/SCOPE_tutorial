@@ -2,40 +2,65 @@
 % Please edit documentation in R/choiceofT.R
 \name{choiceofT}
 \alias{choiceofT}
-\title{Visualize EM fitting for each cell. BIC is used to choose optimal CNV group.}
+\title{Visualize EM fitting for each cell.}
 \usage{
-choiceofT(Y, gcfit.temp, gctemp, norm_index, offset, T, alpha,
-  minCountQC = 20, filename)
+choiceofT(Y_qc, gc_qc, norm_index, T, ploidyInt, beta0, minCountQC = 20,
+  filename)
 }
 \arguments{
-\item{Y}{read depth matrix across all cells}
+\item{Y_qc}{read depth matrix across all cells after quality control}
 
-\item{gcfit.temp}{bin-specific GC content bias matrix across all single cells}
-
-\item{gctemp}{a vector giving values of bin-specific GC content after \code{gcfit.tempj}
-outlier removal (for better fitting)}
+\item{gc_qc}{vector of GC content for each bin after quality control}
 
 \item{norm_index}{indices of normal/diploid cells}
 
-\item{offset}{offset matrix across all cells}
+\item{T}{a vector of integers indicating number of CNV groups.
+Use BIC to select optimal number of CNV groups.
+If \code{T = 1}, assume all reads are from normal regions
+so that EM algorithm is not implemented. Otherwise,
+we assume there is always a CNV group of heterozygous deletion
+and a group of null region. The rest groups are representative
+of different duplication states.}
 
-\item{T}{a vector of integers indicating number of CNV groups. Use BIC to select optimal
-number of CNV groups. If \code{T = 1}, assume all reads are from normal regions so that
-EM algorithm is not implemented. Otherwise, we assume there is always a CNV group of heterozygous
-deletion and a group of null region. The rest groups are representative of different duplication
-states.}
+\item{ploidyInt}{a vector of initialized ploidy return from
+\code{PreEst_Ploidy}}
 
-\item{alpha}{adjusted/absolute copy number matrix across all cells}
+\item{beta0}{a vector of initialized bin-specific biases returned
+from CODEX2 without latent factors}
 
-\item{minCountQC}{the minimum read coverage required for EM fitting. Defalut is \code{20}}
+\item{minCountQC}{the minimum read coverage required for EM fitting.
+Defalut is \code{20}}
 
 \item{filename}{the name of output pdf file}
 }
 \value{
-pdf file with EM fitting results and two plots: log likelihood, and BIC versus the number of CNV groups.
+pdf file with EM fitting results and two plots:
+ log likelihood, and BIC versus the number of CNV groups.
 }
 \description{
-Determine the number of CNV group via BIC for each. A pdf file containing EM fitting results and plots is generated.
+A pdf file containing EM fitting results and plots is generated.
+}
+\examples{
+Gini = getGini(Y_sim)
+# first-pass CODEX2 run with no latent factors
+normObj.sim <- normalize_codex2_ns_noK(Y_qc =Y_sim,
+                                       gc_qc = ref_sim$gc,
+                                       norm_index = which(Gini<=0.12))
+Yhat.noK.sim=normObj.sim$Yhat
+beta.hat.noK.sim=normObj.sim$beta.hat
+fGC.hat.noK.sim=normObj.sim$fGC.hat
+N.sim = normObj.sim$N
+
+# Ploidy initialization
+ploidy.sim =  PreEst_ploidy(Y = Y_sim, Yhat = Yhat.noK.sim, ref = ref_sim)
+ploidy.sim
+
+choiceofT(Y_qc = Y_sim, gc_qc = ref_sim$gc,
+          norm_index = which(Gini<=0.12), T = 1:7,
+          ploidyInt = ploidy.sim,
+          beta0 = beta.hat.noK.sim,
+          filename = "choiceofTdemo.pdf")
+
 }
 \author{
 Rujin Wang \email{rujin@email.unc.edu}

@@ -3,14 +3,22 @@
 #' @description Perform QC step on single cells and bins.
 #'
 #' @param Y_raw raw read count matrix returned from \code{\link{getcoverage.scDNA}}
-#' @param sampname_raw sample names for quality control returned from \code{\link{getbambed_scope}}
-#' @param ref_raw raw GRanges object with corresponding GC content and mappability for quality control returned from \code{\link{getbambed_scope}}
-#' @param QCmetric_raw a QC metric for single cells returned from \code{\link{getsampQC}}
-#' @param cov_thresh scalar variable specifying the lower bound of read count summation of each cell. Default is \code{0}
-#' @param mapq20_thresh scalar variable specifying the lower threshold of proportion of reads with mapping quality greater than 20. Default is \code{0.3}
-#' @param mapp_thresh scalar variable specifying mappability of each genomic bin. Default is \code{0.9}
-#' @param gc_thresh vector specifying the lower and upper bound of GC content threshold for quality control. Default is \code{20-80}
-#' @param nMAD scalar variable specifying the number of MAD from the median of total read counts adjusted by library size for each cell. Default is \code{3}
+#' @param sampname_raw sample names for quality control returned
+#'  from \code{\link{getbambed_scope}}
+#' @param ref_raw raw GRanges object with corresponding GC content
+#'  and mappability for quality control returned from \code{\link{getbambed_scope}}
+#' @param QCmetric_raw a QC metric for single cells returned from
+#'  \code{\link{getsampQC}}
+#' @param cov_thresh scalar variable specifying the lower bound of read count
+#'  summation of each cell. Default is \code{0}
+#' @param mapq20_thresh scalar variable specifying the lower threshold
+#'  of proportion of reads with mapping quality greater than 20. Default is \code{0.3}
+#' @param mapp_thresh scalar variable specifying mappability of
+#'  each genomic bin. Default is \code{0.9}
+#' @param gc_thresh vector specifying the lower and upper bound of
+#'  GC content threshold for quality control. Default is \code{20-80}
+#' @param nMAD scalar variable specifying the number of MAD from the median
+#'  of total read counts adjusted by library size for each cell. Default is \code{3}
 #'
 #' @return A list with components
 #'   \item{Y}{read depth matrix after quality control}
@@ -18,18 +26,31 @@
 #'   \item{ref}{A GRanges object specifying whole genomic bin positions after quality control}
 #'   \item{QCmetric}{A data frame of QC metric for single cells after quality control}
 #'
+#' @examples
+#' Y_raw = coverageObj.scopeDemo$Y
+#' sampname_raw = rownames(QCmetric.scopeDemo)
+#' ref_raw = ref.scopeDemo
+#' QCmetric_raw = QCmetric.scopeDemo
+#' qcObj = qc_scope(Y_raw = Y_raw, sampname_raw = sampname_raw,
+#'                  ref_raw = ref_raw, QCmetric_raw = QCmetric_raw)
+#'
 #' @author Rujin Wang \email{rujin@email.unc.edu}
 #' @import stats
 #' @export
-qc_scope = function (Y_raw, sampname_raw, ref_raw, QCmetric_raw, cov_thresh = 0, mapq20_thresh = 0.3, mapp_thresh = 0.9, gc_thresh = c(20, 80), nMAD = 3) {
+qc_scope = function (Y_raw, sampname_raw, ref_raw, QCmetric_raw,
+                     cov_thresh = 0, mapq20_thresh = 0.3, mapp_thresh = 0.9,
+                     gc_thresh = c(20, 80), nMAD = 3) {
   if(length(ref_raw) != nrow(Y_raw)){
-    stop("Invalid inputs: length of ref and # of rows in read count matrix must be the same")
+    stop("Invalid inputs: length of ref and # of rows in read count matrix
+         must be the same")
   }
   if(length(sampname_raw) != ncol(Y_raw)){
-    stop("Invalid inputs: length of sample names and # of cols in read count matrix must be the same")
+    stop("Invalid inputs: length of sample names and # of cols in
+         read count matrix must be the same")
   }
   if(nrow(QCmetric_raw) != ncol(Y_raw)){
-    stop("Invalid inputs: # of rows in QC metric and # of cols in read count matrix must be the same")
+    stop("Invalid inputs: # of rows in QC metric and # of cols in
+         read count matrix must be the same")
   }
   mapp = ref_raw$mapp
   gc = ref_raw$gc

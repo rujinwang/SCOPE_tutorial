@@ -2,10 +2,10 @@
 % Please edit documentation in R/normalize_scope.R
 \name{normalize_scope}
 \alias{normalize_scope}
-\title{Normalization of read depth with latent factors using Expectation-Maximization algorithm
- under the case-control setting}
+\title{Normalization of read depth with latent factors using
+ Expectation-Maximization algorithm under the case-control setting}
 \usage{
-normalize_scope(Y_qc, gc_qc, K, norm_index, N, T, alpha0, beta0,
+normalize_scope(Y_qc, gc_qc, K, norm_index, T, ploidyInt, beta0,
   minCountQC = 20)
 }
 \arguments{
@@ -17,19 +17,21 @@ normalize_scope(Y_qc, gc_qc, K, norm_index, N, T, alpha0, beta0,
 
 \item{norm_index}{indices of normal/diploid cells}
 
-\item{N}{library size factor, which is computed from the genome-wide read depth data}
+\item{T}{a vector of integers indicating number of CNV groups.
+Use BIC to select optimal number of CNV groups. If \code{T = 1},
+assume all reads are from normal regions so that EM algorithm is
+not implemented. Otherwise, we assume there is always a CNV group
+of heterozygous deletion and a group of null region. The rest
+groups are representative of different duplication states.}
 
-\item{T}{a vector of integers indicating number of CNV groups. Use BIC to select optimal
-number of CNV groups. If \code{T = 1}, assume all reads are from normal regions so that
-EM algorithm is not implemented. Otherwise, we assume there is always a CNV group of heterozygous
-deletion and a group of null region. The rest groups are representative of different duplication
-states.}
+\item{ploidyInt}{a vector of initialized ploidy return
+from \code{PreEst_Ploidy}}
 
-\item{alpha0}{initialized matrix of absolute copy number}
+\item{beta0}{a vector of initialized bin-specific biases
+returned from CODEX2 without latent factors}
 
-\item{beta0}{a vector of initialized bin-specific biases returned from CODEX2 without latent factors}
-
-\item{minCountQC}{the minimum read coverage required for normalization and EM fitting. Defalut is \code{20}}
+\item{minCountQC}{the minimum read coverage required for
+normalization and EM fitting. Defalut is \code{20}}
 }
 \value{
 A list with components
@@ -45,10 +47,35 @@ A list with components
   \item{K}{Number of latent Poisson factors}
 }
 \description{
-Fit a Poisson generalized linear model to normalize the raw read depth data from
- single-cell DNA sequencing, with latent factors under the case-control setting. Model GC
- content bias using an expectation-maximization algorithm, which accounts for the different
- copy number states.
+Fit a Poisson generalized linear model to normalize
+ the raw read depth data from single-cell DNA sequencing, with
+ latent factors under the case-control setting. Model GC content
+ bias using an expectation-maximization algorithm, which accounts for
+ the different copy number states.
+}
+\examples{
+Gini = getGini(Y_sim)
+
+# first-pass CODEX2 run with no latent factors
+normObj.sim <- normalize_codex2_ns_noK(Y_qc =Y_sim,
+                                       gc_qc = ref_sim$gc,
+                                       norm_index = which(Gini<=0.12))
+Yhat.noK.sim=normObj.sim$Yhat
+beta.hat.noK.sim=normObj.sim$beta.hat
+fGC.hat.noK.sim=normObj.sim$fGC.hat
+N.sim = normObj.sim$N
+
+# Ploidy initialization
+ploidy.sim =  PreEst_ploidy(Y = Y_sim, Yhat = Yhat.noK.sim, ref = ref_sim)
+ploidy.sim
+
+normObj.scope.sim = normalize_scope(Y_qc = Y_sim, gc_qc = ref_sim$gc,
+                                    K = 1, ploidyInt = ploidy.sim,
+                                    norm_index = which(Gini<=0.12), T = 1:7,
+                                    beta0 = beta.hat.noK.sim)
+Yhat.sim = normObj.scope.sim$Yhat[[which.max(normObj.scope.sim$BIC)]]
+fGC.hat.sim = normObj.scope.sim$fGC.hat[[which.max(normObj.scope.sim$BIC)]]
+
 }
 \author{
 Rujin Wang \email{rujin@email.unc.edu}
