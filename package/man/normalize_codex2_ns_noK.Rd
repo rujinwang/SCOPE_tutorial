@@ -3,7 +3,7 @@
 \name{normalize_codex2_ns_noK}
 \alias{normalize_codex2_ns_noK}
 \title{Normalization of read depth without latent factors under
- the case-control setting}
+the case-control setting}
 \usage{
 normalize_codex2_ns_noK(Y_qc, gc_qc, norm_index)
 }
@@ -16,23 +16,24 @@ normalize_codex2_ns_noK(Y_qc, gc_qc, norm_index)
 }
 \value{
 A list with components
-  \item{Yhat}{A list of normalized read depth matrix}
-  \item{fGC.hat}{A list of estimated GC content bias matrix}
-  \item{beta.hat}{A list of estimated bin-specific bias vector}
-  \item{N}{A vector of cell-specific library size factor,
-  which is computed from the genome-wide read depth data}
+    \item{Yhat}{A list of normalized read depth matrix}
+    \item{fGC.hat}{A list of estimated GC content bias matrix}
+    \item{beta.hat}{A list of estimated bin-specific bias vector}
+    \item{N}{A vector of cell-specific library size factor,
+        which is computed from the genome-wide read depth data}
 }
 \description{
 Assuming that all reads are from diploid regions,
- fit a Poisson generalized linear model to normalize the raw read depth data from
- single-cell DNA sequencing, without latent factors under the case-control setting.
+fit a Poisson generalized linear model to normalize the
+raw read depth data from single-cell DNA sequencing, without
+latent factors under the case-control setting.
 }
 \examples{
 Gini = getGini(Y_sim)
 # first-pass CODEX2 run with no latent factors
 normObj.sim <- normalize_codex2_ns_noK(Y_qc =Y_sim,
-                                       gc_qc = ref_sim$gc,
-                                       norm_index = which(Gini<=0.12))
+                                        gc_qc = ref_sim$gc,
+                                        norm_index = which(Gini<=0.12))
 
 }
 \author{

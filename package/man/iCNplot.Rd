@@ -4,8 +4,8 @@
 \alias{iCNplot}
 \title{Plot post-segmentation copy number profiles of integer values}
 \usage{
-iCNplot(iCNmat, ref, Gini, annotation = NULL, plot.dendrogram = TRUE,
-  filename)
+iCNplot(iCNmat, ref, Gini, annotation = NULL,
+        plot.dendrogram = TRUE, filename)
 }
 \arguments{
 \item{iCNmat}{inferred integer copy-number matrix by SCOPE,
@@ -38,7 +38,7 @@ Gini = getGini(Y_sim)
 iCNplot(iCNmat = iCN_sim,
         ref = ref_sim,
         Gini = Gini,
-        filename = "iCNplotdemo")
+        filename = 'iCNplotdemo')
 
 }
 \author{

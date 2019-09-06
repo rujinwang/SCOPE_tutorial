@@ -19,12 +19,12 @@
 
 
 #' A post cross-sample segmentation integer copy number matrix returned by
-#'  SCOPE in the demo
+#' SCOPE in the demo
 #'
 #' @docType data
 #'
 #' @format A post cross-sample segmentation integer copy number matrix of
-#'  five toy cells returned by SCOPE
+#' five toy cells returned by SCOPE
 #'
 #' @keywords datasets
 "iCN_sim"
@@ -45,7 +45,7 @@
 #' @docType data
 #'
 #' @format Pre-computed using whole genome sequencing data of
-#'  three single cells from 10X Genomics Single-Cell CNV solution
+#' three single cells from 10X Genomics Single-Cell CNV solution
 #'
 #' @keywords datasets
 "coverageObj.scopeDemo"
@@ -56,7 +56,7 @@
 #' @docType data
 #'
 #' @format Pre-computed using whole genome sequencing data of
-#'  three single cells from 10X Genomics Single-Cell CNV solution
+#' three single cells from 10X Genomics Single-Cell CNV solution
 #'
 #' @keywords datasets
 "QCmetric.scopeDemo"
@@ -69,7 +69,7 @@
 #' @docType data
 #'
 #' @format Pre-computed using whole genome sequencing data
-#'  with GC content and mappability scores
+#' with GC content and mappability scores
 #'
 #' @keywords datasets
 "ref.scopeDemo"

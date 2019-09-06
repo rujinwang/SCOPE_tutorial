@@ -7,27 +7,27 @@
 getsampQC(bambedObj)
 }
 \arguments{
-\item{bambedObj}{object returned from \code{\link[CODEX2]{getbambed}}}
+\item{bambedObj}{object returned from \code{getbambed_scope}}
 }
 \value{
 \item{QCmetric}{A matrix containing total number/proportion of reads,
-   total number/proportion of mapped reads, total number/proportion of mapped
-   non-duplicate reads, and number/proportion of reads with mapping quality
-   greater than 20}
+    total number/proportion of mapped reads, total number/proportion
+    of mapped non-duplicate reads, and number/proportion of reads with
+    mapping quality greater than 20}
 }
 \description{
 Perform QC step on single cells.
 }
 \examples{
 library(WGSmapp)
-bedFile <- system.file("extdata", "scWGA500kbsort.bed", package = "SCOPE")
-bamfolder <- system.file("extdata", package = "WGSmapp")
+bedFile <- system.file('extdata', 'scWGA500kbsort.bed', package = 'SCOPE')
+bamfolder <- system.file('extdata', package = 'WGSmapp')
 bamFile <- list.files(bamfolder, pattern = '*.dedup.bam$')
 bamdir <- file.path(bamfolder, bamFile)
-sampname_raw = sapply(strsplit(bamFile, ".", fixed = TRUE), "[", 1)
+sampname_raw = sapply(strsplit(bamFile, '.', fixed = TRUE), '[', 1)
 bambedObj <- getbambed_scope(bamdir = bamdir,
-                             bedFile = bedFile,
-                             sampname = sampname_raw)
+                            bedFile = bedFile,
+                            sampname = sampname_raw)
 QCmetric_raw = getsampQC(bambedObj)
 
 }

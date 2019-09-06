@@ -5,7 +5,7 @@
 \alias{QCmetric.scopeDemo}
 \title{Pre-stored QCmetric data for demonstration purposes}
 \format{Pre-computed using whole genome sequencing data of
- three single cells from 10X Genomics Single-Cell CNV solution}
+three single cells from 10X Genomics Single-Cell CNV solution}
 \usage{
 QCmetric.scopeDemo
 }

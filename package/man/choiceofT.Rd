@@ -4,8 +4,8 @@
 \alias{choiceofT}
 \title{Visualize EM fitting for each cell.}
 \usage{
-choiceofT(Y_qc, gc_qc, norm_index, T, ploidyInt, beta0, minCountQC = 20,
-  filename)
+choiceofT(Y_qc, gc_qc, norm_index, T, ploidyInt, beta0,
+                minCountQC = 20, filename)
 }
 \arguments{
 \item{Y_qc}{read depth matrix across all cells after quality control}
@@ -35,7 +35,7 @@ Defalut is \code{20}}
 }
 \value{
 pdf file with EM fitting results and two plots:
- log likelihood, and BIC versus the number of CNV groups.
+log likelihood, and BIC versus the number of CNV groups.
 }
 \description{
 A pdf file containing EM fitting results and plots is generated.
@@ -44,8 +44,8 @@ A pdf file containing EM fitting results and plots is generated.
 Gini = getGini(Y_sim)
 # first-pass CODEX2 run with no latent factors
 normObj.sim <- normalize_codex2_ns_noK(Y_qc =Y_sim,
-                                       gc_qc = ref_sim$gc,
-                                       norm_index = which(Gini<=0.12))
+                                        gc_qc = ref_sim$gc,
+                                        norm_index = which(Gini<=0.12))
 Yhat.noK.sim=normObj.sim$Yhat
 beta.hat.noK.sim=normObj.sim$beta.hat
 fGC.hat.noK.sim=normObj.sim$fGC.hat
@@ -56,10 +56,10 @@ ploidy.sim =  PreEst_ploidy(Y = Y_sim, Yhat = Yhat.noK.sim, ref = ref_sim)
 ploidy.sim
 
 choiceofT(Y_qc = Y_sim, gc_qc = ref_sim$gc,
-          norm_index = which(Gini<=0.12), T = 1:7,
-          ploidyInt = ploidy.sim,
-          beta0 = beta.hat.noK.sim,
-          filename = "choiceofTdemo.pdf")
+        norm_index = which(Gini<=0.12), T = 1:7,
+        ploidyInt = ploidy.sim,
+        beta0 = beta.hat.noK.sim,
+        filename = 'choiceofTdemo.pdf')
 
 }
 \author{

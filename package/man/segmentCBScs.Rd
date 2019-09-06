@@ -26,22 +26,26 @@ searching would be performed. Defalut is \code{0}.}
 }
 \value{
 A list with components
-  \item{poolcall}{Cross-sample CNV callings indicating shared breakpoints}
-  \item{finalcall}{Final cross-sample segmented callset of CNVs with genotyping results}
-  \item{image.orig}{A matrix giving logarithm of normalized z-scores}
-  \item{image.seg}{A matrix of logarithm of estimated copy number over 2}
-  \item{iCN}{A matrix of inferred integer copy number profiles}
+    \item{poolcall}{Cross-sample CNV callings indicating
+        shared breakpoints}
+    \item{finalcall}{Final cross-sample segmented callset of
+        CNVs with genotyping results}
+    \item{image.orig}{A matrix giving logarithm of normalized
+        z-scores}
+    \item{image.seg}{A matrix of logarithm of estimated
+        copy number over 2}
+    \item{iCN}{A matrix of inferred integer copy number profiles}
 }
 \description{
 SCOPE offers a cross-sample Poisson likelihood-based
- recursive segmentation, enabling shared breakpoints across cells
- from the same genetic background.
+recursive segmentation, enabling shared breakpoints across cells
+from the same genetic background.
 }
 \examples{
 Yhat.sim = normObj.scopeDemo$Yhat[[which.max(normObj.scopeDemo$BIC)]]
 segment_cs_chr1 = segmentCBScs(Y = Y_sim, Yhat = Yhat.sim,
-                               sampname = colnames(Y_sim),
-                               ref = ref_sim, chr = "chr1", max.ns = 1)
+                        sampname = colnames(Y_sim),
+                        ref = ref_sim, chr = 'chr1', max.ns = 1)
 
 }
 \author{

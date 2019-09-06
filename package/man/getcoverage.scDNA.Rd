@@ -16,51 +16,51 @@ such as segmental duplication regions and gaps near
 telomeres/centromeres, which need to be masked prior to
 getting coverage}
 
-\item{seq}{the sequencing method to be used. This should be either "paired-end"
-or "single-end"}
+\item{seq}{the sequencing method to be used. This should be either
+'paired-end' or 'single-end'}
 }
 \value{
 \item{Y}{Read depth matrix}
 }
 \description{
 Get read coverage for each genomic bin across all single
- cells from scDNA-seq.
+    cells from scDNA-seq.
 }
 \examples{
 library(WGSmapp)
-bedFile <- system.file("extdata", "scWGA500kbsort.bed",
-                       package = "SCOPE")
-bamfolder <- system.file("extdata", package = "WGSmapp")
+bedFile <- system.file('extdata', 'scWGA500kbsort.bed',
+                        package = 'SCOPE')
+bamfolder <- system.file('extdata', package = 'WGSmapp')
 bamFile <- list.files(bamfolder, pattern = '*.dedup.bam$')
 bamdir <- file.path(bamfolder, bamFile)
-sampname_raw = sapply(strsplit(bamFile, ".", fixed = TRUE), "[", 1)
+sampname_raw = sapply(strsplit(bamFile, '.', fixed = TRUE), '[', 1)
 bambedObj <- getbambed_scope(bamdir = bamdir,
-                             bedFile = bedFile,
-                             sampname = sampname_raw)
+                            bedFile = bedFile,
+                            sampname = sampname_raw)
 # Get segmental duplication regions
-seg.dup = read.table(system.file("extdata",
-                     "GRCh37GenomicSuperDup.tab",
-                     package = "WGSmapp"),
-                     head = TRUE)
+seg.dup = read.table(system.file('extdata',
+                    'GRCh37GenomicSuperDup.tab',
+                    package = 'WGSmapp'),
+                    head = TRUE)
 seg.dup = seg.dup[!is.na(match(seg.dup[,1],
-                         paste('chr', c(1:22, 'X', 'Y'), sep = ''))),]
+                    paste('chr', c(1:22, 'X', 'Y'), sep = ''))),]
 seg.dup = GRanges(seqnames = seg.dup[,1],
-                  ranges = IRanges(start=seg.dup[,2], end = seg.dup[,3]))
+                    ranges = IRanges(start=seg.dup[,2], end = seg.dup[,3]))
 # Get hg19 gaps
-gaps = read.table(system.file("extdata", "hg19gaps.txt",
-                  package = "WGSmapp"), head = TRUE)
+gaps = read.table(system.file('extdata', 'hg19gaps.txt',
+                    package = 'WGSmapp'), head = TRUE)
 gaps = gaps[!is.na(match(gaps[,2],
-                   paste('chr', c(1:22, 'X', 'Y'), sep=''))),]
+                    paste('chr', c(1:22, 'X', 'Y'), sep=''))),]
 gaps = GRanges(seqnames = gaps[,2],
-               ranges = IRanges(start = gaps[,3], end = gaps[,4]))
+                ranges = IRanges(start = gaps[,3], end = gaps[,4]))
 # Generate mask region
 mask.ref = sort(c(seg.dup, gaps))
 
 # Getting raw read depth
 coverageObj <- getcoverage.scDNA(bambedObj,
-                                 mapqthres = 40,
-                                 mask.ref,
-                                 seq='paired-end')
+                                mapqthres = 40,
+                                mask.ref,
+                                seq='paired-end')
 Y_raw <- coverageObj$Y
 
 }

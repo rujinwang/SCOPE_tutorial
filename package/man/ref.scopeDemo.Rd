@@ -5,7 +5,7 @@
 \alias{ref.scopeDemo}
 \title{Pre-stored 500kb-size reference genome for demonstration purposes}
 \format{Pre-computed using whole genome sequencing data
- with GC content and mappability scores}
+with GC content and mappability scores}
 \usage{
 ref.scopeDemo
 }

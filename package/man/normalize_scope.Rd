@@ -3,10 +3,10 @@
 \name{normalize_scope}
 \alias{normalize_scope}
 \title{Normalization of read depth with latent factors using
- Expectation-Maximization algorithm under the case-control setting}
+Expectation-Maximization algorithm under the case-control setting}
 \usage{
-normalize_scope(Y_qc, gc_qc, K, norm_index, T, ploidyInt, beta0,
-  minCountQC = 20)
+normalize_scope(Y_qc, gc_qc, K, norm_index, T, ploidyInt,
+                beta0, minCountQC = 20)
 }
 \arguments{
 \item{Y_qc}{read depth matrix after quality control}
@@ -35,31 +35,31 @@ normalization and EM fitting. Defalut is \code{20}}
 }
 \value{
 A list with components
-  \item{Yhat}{A list of normalized read depth matrix with EM}
-  \item{alpha.hat}{A list of absolute copy number matrix}
-  \item{fGC.hat}{A list of EM estimated GC content bias matrix}
-  \item{beta.hat}{A list of EM estimated bin-specific bias vector}
-  \item{g.hat}{A list of estimated Poisson latent factor}
-  \item{h.hat}{A list of estimated Poisson latent factor}
-  \item{AIC}{AIC for model selection}
-  \item{BIC}{BIC for model selection}
-  \item{RSS}{RSS for model selection}
-  \item{K}{Number of latent Poisson factors}
+    \item{Yhat}{A list of normalized read depth matrix with EM}
+    \item{alpha.hat}{A list of absolute copy number matrix}
+    \item{fGC.hat}{A list of EM estimated GC content bias matrix}
+    \item{beta.hat}{A list of EM estimated bin-specific bias vector}
+    \item{g.hat}{A list of estimated Poisson latent factor}
+    \item{h.hat}{A list of estimated Poisson latent factor}
+    \item{AIC}{AIC for model selection}
+    \item{BIC}{BIC for model selection}
+    \item{RSS}{RSS for model selection}
+    \item{K}{Number of latent Poisson factors}
 }
 \description{
 Fit a Poisson generalized linear model to normalize
- the raw read depth data from single-cell DNA sequencing, with
- latent factors under the case-control setting. Model GC content
- bias using an expectation-maximization algorithm, which accounts for
- the different copy number states.
+the raw read depth data from single-cell DNA sequencing, with
+latent factors under the case-control setting. Model GC content
+bias using an expectation-maximization algorithm, which accounts for
+the different copy number states.
 }
 \examples{
 Gini = getGini(Y_sim)
 
 # first-pass CODEX2 run with no latent factors
 normObj.sim <- normalize_codex2_ns_noK(Y_qc =Y_sim,
-                                       gc_qc = ref_sim$gc,
-                                       norm_index = which(Gini<=0.12))
+                                        gc_qc = ref_sim$gc,
+                                        norm_index = which(Gini<=0.12))
 Yhat.noK.sim=normObj.sim$Yhat
 beta.hat.noK.sim=normObj.sim$beta.hat
 fGC.hat.noK.sim=normObj.sim$fGC.hat

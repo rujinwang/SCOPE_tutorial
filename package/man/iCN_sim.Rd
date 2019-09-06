@@ -4,14 +4,14 @@
 \name{iCN_sim}
 \alias{iCN_sim}
 \title{A post cross-sample segmentation integer copy number matrix returned by
- SCOPE in the demo}
+SCOPE in the demo}
 \format{A post cross-sample segmentation integer copy number matrix of
- five toy cells returned by SCOPE}
+five toy cells returned by SCOPE}
 \usage{
 iCN_sim
 }
 \description{
 A post cross-sample segmentation integer copy number matrix returned by
- SCOPE in the demo
+SCOPE in the demo
 }
 \keyword{datasets}

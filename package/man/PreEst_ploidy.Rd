@@ -5,7 +5,7 @@
 \title{Ploidy pre-initialization}
 \usage{
 PreEst_ploidy(Y, Yhat, ref, maxPloidy = 6, minPloidy = 1.5,
-  minBinWidth = 5)
+                minBinWidth = 5)
 }
 \arguments{
 \item{Y}{raw read depth matrix after quality control procedure}
@@ -32,8 +32,8 @@ Gini = getGini(Y_sim)
 
 # first-pass CODEX2 run with no latent factors
 normObj.sim <- normalize_codex2_ns_noK(Y_qc =Y_sim,
-                                       gc_qc = ref_sim$gc,
-                                       norm_index = which(Gini<=0.12))
+                                        gc_qc = ref_sim$gc,
+                                        norm_index = which(Gini<=0.12))
 Yhat.noK.sim=normObj.sim$Yhat
 beta.hat.noK.sim=normObj.sim$beta.hat
 fGC.hat.noK.sim=normObj.sim$fGC.hat
