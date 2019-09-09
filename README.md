@@ -29,9 +29,9 @@ Rujin Wang, Danyu Lin, and Yuchao Jiang. SCOPE: A Normalization and Copy Number 
 The flowchart below outlines the procedures for profiling single-cell CNV. The first step is bioinformatic pre-processing pipeline. Assembled BAM files are finally required. The second step is calculation of GC content, mappability and read depth using Rsamtools with QC measurements. An EM embedded normalization procedure is then applied to single cells to remove biases and artifacts along the whole genome. The cross-sample Poisson likelihood segmentation is performed to call CNVs, which can be further used to infer single-cell clusters or clones.
 
 <p align="center">
-  <img src='https://github.com/rujinwang/SCOPE/blob/master/demo/Figure1_SCOPE_outline.jpg' width='250' height='400'>
+  <img src='https://github.com/rujinwang/SCOPE_tutorial/blob/master/demo/Figure1_SCOPE_outline.jpg' width='250' height='400'>
 </p>
 
 ## Running SCOPE
-**Tutorial** is available [**here**](http://htmlpreview.github.io/?https://github.com/rujinwang/SCOPE/blob/master/SCOPE_tutorial.html)
+**Tutorial** is available [**here**](http://htmlpreview.github.io/?https://github.com/rujinwang/SCOPE_tutorial/blob/master/SCOPE_tutorial.html)
 
